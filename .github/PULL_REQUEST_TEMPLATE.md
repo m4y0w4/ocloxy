@@ -19,4 +19,4 @@
 
 - [ ] `plutil -lint com.opensolomark.proxy.plist` passes (if the plist changed).
 - [ ] I tested the proxy with a local upstream (if `proxy.py` changed).
-- [ ] I updated the README for any user-facing behavior change.
+- [ ] I updated the README or docs for any user-facing behavior change.
