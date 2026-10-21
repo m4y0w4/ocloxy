@@ -9,7 +9,7 @@
     <array>
         <string>/bin/sh</string>
         <string>-c</string>
-        <string>mkdir -p "$HOME/Library/Logs"; exec /usr/bin/env python3 "$HOME/OpenSoloMark/ocloxy.py" >> "$HOME/Library/Logs/opensolomark.log" 2>&amp;1</string>
+        <string>mkdir -p "$HOME/Library/Logs"; exec /usr/bin/env python3 "$HOME/ocloxy/ocloxy.py" >> "$HOME/Library/Logs/opensolomark.log" 2>&amp;1</string>
     </array>
 
     <key>EnvironmentVariables</key>

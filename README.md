@@ -1,8 +1,10 @@
-# OpenSoloMark
+# Ocloxy
+
+**OpenCode Local Proxy**
 
 A tiny local proxy that lets **Markra or SoloMD** use **OpenCode Go** as an OpenAI-compatible provider.
 
-OpenCode Go requires an `x-opencode-session` header on inference requests. These apps let you set a base URL and an API key, but not custom headers. OpenSoloMark runs on your Mac, adds the header, and forwards the request to OpenCode. Your API key stays in the app.
+OpenCode Go requires an `x-opencode-session` header on inference requests. These apps let you set a base URL and an API key, but not custom headers. Ocloxy runs on your Mac, adds the header, and forwards the request to OpenCode. Your API key stays in the app.
 
 Tested with Markra 2.13.1 and SoloMD 5.0.3.
 
@@ -14,14 +16,14 @@ Without the header, OpenCode Go returns:
 400 MissingSessionID
 ```
 
-OpenSoloMark sits between your app and OpenCode:
+Ocloxy sits between your app and OpenCode:
 
 ```text
 Markra or SoloMD
       │
       │  http://127.0.0.1:47123/inference/go/v1
       ▼
-OpenSoloMark proxy
+Ocloxy proxy
       │  adds x-opencode-session
       ▼
 https://opencode.ai/inference/go/v1
@@ -45,17 +47,17 @@ No `pip install` is needed. Check Python with `python3 --version`; if it is miss
 The LaunchAgent expects:
 
 ```text
-~/OpenSoloMark/ocloxy.py
+~/ocloxy/ocloxy.py
 ```
 
-If you downloaded a ZIP, rename the folder to `OpenSoloMark` and move it to your home folder. If you keep it elsewhere, edit the `ocloxy.py` path in the plist.
+If you downloaded a ZIP, rename the folder to `ocloxy` and move it to your home folder. If you keep it elsewhere, edit the `ocloxy.py` path in the plist.
 
 ### 2. Install the LaunchAgent
 
 ```bash
 mkdir -p ~/Library/LaunchAgents
-plutil -lint ~/OpenSoloMark/com.opensolomark.proxy.plist
-cp ~/OpenSoloMark/com.opensolomark.proxy.plist ~/Library/LaunchAgents/
+plutil -lint ~/ocloxy/com.opensolomark.proxy.plist
+cp ~/ocloxy/com.opensolomark.proxy.plist ~/Library/LaunchAgents/
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.plist
 ```
 
@@ -159,7 +161,7 @@ rm ~/Library/LaunchAgents/com.opensolomark.proxy.plist
 Then point your app back to its previous provider. Optionally remove the proxy files and log:
 
 ```bash
-rm -rf ~/OpenSoloMark
+rm -rf ~/ocloxy
 rm -f ~/Library/Logs/opensolomark.log
 ```
 
@@ -189,4 +191,4 @@ MIT. See [LICENSE](LICENSE).
 
 ## Disclaimer
 
-OpenSoloMark is an unofficial community project. It is not affiliated with OpenCode, Markra, or SoloMD. Use it at your own risk. The software is provided “as is”, without warranty of any kind.
+Ocloxy is an unofficial community project. It is not affiliated with OpenCode, Markra, or SoloMD. Use it at your own risk. The software is provided “as is”, without warranty of any kind.

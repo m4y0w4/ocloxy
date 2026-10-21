@@ -48,7 +48,7 @@ If you changed `LISTEN_PORT`, use the new port in the health check and in the ap
 The plist starts the proxy with this path:
 
 ```text
-$HOME/OpenSoloMark/ocloxy.py
+$HOME/ocloxy/ocloxy.py
 ```
 
 If you move the folder, update the `ocloxy.py` path in `ProgramArguments`, then reload the service. `$HOME` expands to your home directory, so the plist does not contain your username.
@@ -72,7 +72,7 @@ The default also allows `/zen/` as an alternate path family. Other paths and tra
 To run the proxy in the foreground for testing:
 
 ```bash
-LISTEN_PORT=47124 python3 ~/OpenSoloMark/ocloxy.py
+LISTEN_PORT=47124 python3 ~/ocloxy/ocloxy.py
 ```
 
 Stop it with `Ctrl` + `C`. The LaunchAgent is the normal way to run the proxy.
