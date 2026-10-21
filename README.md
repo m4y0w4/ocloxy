@@ -1,4 +1,4 @@
-# Ocloxy
+# OcLoXy
 
 **OpenCode Local Proxy**
 
