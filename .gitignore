@@ -5,6 +5,9 @@
 # Private feature/subfeature design notes
 *.feature.md
 
+# Local reference copies of third-party docs
+markra docs/
+
 # macOS metadata
 .DS_Store
 ._*
