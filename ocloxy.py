@@ -13,8 +13,10 @@ Authorization header from the app is forwarded as-is.
 """
 
 import hashlib
+import ipaddress
 import json
 import os
+import posixpath
 import socket
 import sys
 import time
@@ -22,44 +24,207 @@ import unicodedata
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
-__version__ = "1.0.0-preview.1"
+__version__ = "0.1.0"
 SERVICE = "opensolomark/" + __version__
 
-UPSTREAM = os.environ.get("UPSTREAM_BASE", "https://opencode.ai").rstrip("/")
-HOST = os.environ.get("LISTEN_HOST", "127.0.0.1")
-PORT = int(os.environ.get("LISTEN_PORT", "47123"))
-SESSION = os.environ.get("SESSION_ID", "opensolomark-local").strip() or "opensolomark-local"
-SESSION_MODE = os.environ.get("SESSION_MODE", "fixed").strip().lower()
-if SESSION_MODE not in ("fixed", "derive"):
-    SESSION_MODE = "fixed"
-SESSION_DERIVE_INCLUDE_SYSTEM = os.environ.get(
-    "SESSION_DERIVE_INCLUDE_SYSTEM", "1"
-).strip().lower() not in ("0", "false", "no", "off")
-TIMEOUT = float(os.environ.get("UPSTREAM_TIMEOUT", "600"))
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 47123
+DEFAULT_SESSION = "opensolomark-local"
+DEFAULT_MAX_BODY = 16 * 1024 * 1024
+DEFAULT_PREFIXES = "/inference/,/zen/"
+
+# Defaults; _apply_config() replaces these after startup validation.
+UPSTREAM = "https://opencode.ai"
+HOST = DEFAULT_HOST
+PORT = DEFAULT_PORT
+SESSION = DEFAULT_SESSION
+SESSION_MODE = "fixed"
+SESSION_DERIVE_INCLUDE_SYSTEM = True
+TIMEOUT = 600.0
+MAX_BODY_BYTES = DEFAULT_MAX_BODY
+ALLOWED_PREFIXES = ("/inference/", "/zen/")
 
 
-def _allowed_prefixes():
-    """Read ALLOWED_PREFIXES as a comma-separated list of path prefixes.
+class ConfigError(Exception):
+    """Raised when an environment setting is invalid."""
 
-    Prefixes are normalised to end with "/" so that /inference/ does not
-    accidentally match a path like /inference-other.
-    """
-    raw = os.environ.get("ALLOWED_PREFIXES", "/inference/,/zen/")
+
+class BodyTooLarge(Exception):
+    """Raised when a request body exceeds MAX_BODY_BYTES."""
+
+
+class InvalidBody(Exception):
+    """Raised when a request body cannot be read safely."""
+
+
+def _env_int(name, default, minimum, maximum):
+    raw = os.environ.get(name, str(default)).strip()
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ConfigError("%s must be an integer." % name)
+    if value < minimum or value > maximum:
+        raise ConfigError(
+            "%s must be between %d and %d." % (name, minimum, maximum)
+        )
+    return value
+
+
+def _env_float(name, default, minimum, maximum):
+    raw = os.environ.get(name, str(default)).strip()
+    try:
+        value = float(raw)
+    except ValueError:
+        raise ConfigError("%s must be a number." % name)
+    if value < minimum or value > maximum:
+        raise ConfigError(
+            "%s must be between %s and %s." % (name, minimum, maximum)
+        )
+    return value
+
+
+def _env_bool(name, default):
+    raw = os.environ.get(name, "1" if default else "0").strip().lower()
+    if raw in ("1", "true", "yes", "on"):
+        return True
+    if raw in ("0", "false", "no", "off"):
+        return False
+    raise ConfigError(
+        "%s must be one of: 1, 0, true, false, yes, no, on, off." % name
+    )
+
+
+def _is_loopback_host(host):
+    host = (host or "").strip().lower()
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def _validated_upstream(value):
+    value = value.strip().rstrip("/")
+    if not value:
+        raise ConfigError("UPSTREAM_BASE cannot be empty.")
+
+    try:
+        parsed = urlsplit(value)
+    except ValueError as exc:
+        raise ConfigError("UPSTREAM_BASE is not a valid URL.") from exc
+
+    if parsed.scheme not in ("http", "https"):
+        raise ConfigError("UPSTREAM_BASE must start with http:// or https://.")
+    if not parsed.netloc:
+        raise ConfigError("UPSTREAM_BASE must include a host.")
+    if parsed.username or parsed.password:
+        raise ConfigError("UPSTREAM_BASE must not include credentials.")
+    if parsed.query or parsed.fragment:
+        raise ConfigError("UPSTREAM_BASE must not include a query or fragment.")
+
+    try:
+        parsed.port
+    except ValueError as exc:
+        raise ConfigError("UPSTREAM_BASE has an invalid port.") from exc
+
+    if parsed.scheme == "http" and not _is_loopback_host(parsed.hostname):
+        raise ConfigError(
+            "UPSTREAM_BASE must use https unless it points at loopback."
+        )
+
+    return value
+
+
+def _parse_allowed_prefixes(raw):
     prefixes = []
     for part in raw.split(","):
-        part = part.strip()
+        part = unquote(part.strip())
         if not part:
             continue
         if not part.startswith("/"):
             part = "/" + part
+        if part == "/":
+            raise ConfigError("ALLOWED_PREFIXES cannot include /.")
+        if "?" in part or "#" in part or "\x00" in part:
+            raise ConfigError("ALLOWED_PREFIXES contains an invalid character.")
+        if ".." in part.split("/"):
+            raise ConfigError("ALLOWED_PREFIXES cannot include path traversal.")
         part = part.rstrip("/") + "/"
         prefixes.append(part)
     return tuple(prefixes) or ("/inference/", "/zen/")
 
 
-ALLOWED_PREFIXES = _allowed_prefixes()
+def _load_config():
+    upstream = _validated_upstream(
+        os.environ.get("UPSTREAM_BASE", "https://opencode.ai")
+    )
+
+    host = os.environ.get("LISTEN_HOST", DEFAULT_HOST).strip() or DEFAULT_HOST
+    if not _is_loopback_host(host):
+        raise ConfigError(
+            "LISTEN_HOST must be a loopback address; remote binding is not "
+            "supported."
+        )
+
+    port = _env_int("LISTEN_PORT", DEFAULT_PORT, 1, 65535)
+    session = (
+        os.environ.get("SESSION_ID", DEFAULT_SESSION).strip() or DEFAULT_SESSION
+    )
+
+    session_mode = os.environ.get("SESSION_MODE", "fixed").strip().lower()
+    if session_mode not in ("fixed", "derive"):
+        raise ConfigError("SESSION_MODE must be fixed or derive.")
+
+    include_system = _env_bool("SESSION_DERIVE_INCLUDE_SYSTEM", True)
+    timeout = _env_float("UPSTREAM_TIMEOUT", 600.0, 0.1, 3600.0)
+    max_body_bytes = _env_int(
+        "MAX_BODY_BYTES", DEFAULT_MAX_BODY, 1, 256 * 1024 * 1024
+    )
+    prefixes = _parse_allowed_prefixes(
+        os.environ.get("ALLOWED_PREFIXES", DEFAULT_PREFIXES)
+    )
+
+    return {
+        "upstream": upstream,
+        "host": host,
+        "port": port,
+        "session": session,
+        "session_mode": session_mode,
+        "include_system": include_system,
+        "timeout": timeout,
+        "max_body_bytes": max_body_bytes,
+        "allowed_prefixes": prefixes,
+    }
+
+
+def _apply_config(config):
+    global UPSTREAM, HOST, PORT, SESSION, SESSION_MODE
+    global SESSION_DERIVE_INCLUDE_SYSTEM, TIMEOUT, MAX_BODY_BYTES
+    global ALLOWED_PREFIXES
+
+    UPSTREAM = config["upstream"]
+    HOST = config["host"]
+    PORT = config["port"]
+    SESSION = config["session"]
+    SESSION_MODE = config["session_mode"]
+    SESSION_DERIVE_INCLUDE_SYSTEM = config["include_system"]
+    TIMEOUT = config["timeout"]
+    MAX_BODY_BYTES = config["max_body_bytes"]
+    ALLOWED_PREFIXES = config["allowed_prefixes"]
+
+
+def _normalize_path(raw_path):
+    decoded = unquote(raw_path or "/")
+    if not decoded.startswith("/"):
+        raise ValueError("path must be absolute")
+    if "\x00" in decoded or "\\" in decoded:
+        raise ValueError("invalid path")
+    if ".." in decoded.split("/"):
+        raise ValueError("path traversal")
+    return posixpath.normpath(decoded) or "/"
 
 
 def _canonical_content(value):
@@ -221,9 +386,101 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 pass
 
+    def _read_chunked_body(self):
+        chunks = []
+        total = 0
+
+        while True:
+            line = self.rfile.readline(65537)
+            if not line or len(line) > 65536:
+                raise InvalidBody("Malformed chunked request body.")
+
+            size_token = line.split(b";", 1)[0].strip()
+            try:
+                size = int(size_token, 16)
+            except ValueError:
+                raise InvalidBody("Malformed chunk size.")
+
+            if size < 0:
+                raise InvalidBody("Malformed chunk size.")
+
+            if size == 0:
+                for _ in range(100):
+                    trailer = self.rfile.readline(65537)
+                    if not trailer:
+                        break
+                    if len(trailer) > 65536:
+                        raise InvalidBody("Malformed chunk trailer.")
+                    if trailer in (b"\r\n", b"\n"):
+                        break
+                break
+
+            total += size
+            if total > MAX_BODY_BYTES:
+                raise BodyTooLarge()
+
+            chunk = self.rfile.read(size)
+            if len(chunk) != size:
+                raise InvalidBody("Chunked request body ended early.")
+            if self.rfile.read(2) != b"\r\n":
+                raise InvalidBody("Malformed chunked request body.")
+            chunks.append(chunk)
+
+        return b"".join(chunks)
+
+    def _read_request_body(self):
+        transfer_encoding = self.headers.get("Transfer-Encoding")
+        content_length = self.headers.get("Content-Length")
+
+        if transfer_encoding and content_length:
+            raise InvalidBody(
+                "Content-Length and Transfer-Encoding cannot both be set."
+            )
+
+        if transfer_encoding:
+            tokens = [
+                token.strip().lower()
+                for token in transfer_encoding.split(",")
+                if token.strip()
+            ]
+            if tokens != ["chunked"]:
+                raise InvalidBody(
+                    "Unsupported Transfer-Encoding; send chunked or "
+                    "Content-Length."
+                )
+            return self._read_chunked_body()
+
+        if content_length is None:
+            return b""
+
+        try:
+            length = int(content_length)
+        except ValueError:
+            raise InvalidBody("Content-Length must be an integer.")
+
+        if length < 0:
+            raise InvalidBody("Content-Length cannot be negative.")
+        if length > MAX_BODY_BYTES:
+            raise BodyTooLarge()
+
+        body = self.rfile.read(length)
+        if len(body) != length:
+            raise InvalidBody("Request body ended early.")
+        return body
+
     def _forward(self, started):
-        parts = urlsplit(self.path)
-        path = parts.path or "/"
+        try:
+            parts = urlsplit(self.path)
+        except ValueError:
+            return self._path_error(started)
+
+        if parts.scheme or parts.netloc:
+            return self._path_error(started)
+
+        try:
+            path = _normalize_path(parts.path or "/")
+        except ValueError:
+            return self._path_error(started)
 
         if path == "/healthz":
             return self._json(
@@ -254,12 +511,32 @@ class Handler(BaseHTTPRequestHandler):
                 started,
             )
 
-        length_header = self.headers.get("Content-Length")
         try:
-            length = int(length_header) if length_header else 0
-        except ValueError:
-            length = 0
-        body = self.rfile.read(length) if length > 0 else b""
+            body = self._read_request_body()
+        except BodyTooLarge:
+            self.close_connection = True
+            return self._json(
+                413,
+                {
+                    "error": {
+                        "type": "request_body_too_large",
+                        "message": "Request body exceeds MAX_BODY_BYTES.",
+                    }
+                },
+                started,
+            )
+        except InvalidBody as exc:
+            self.close_connection = True
+            return self._json(
+                400,
+                {
+                    "error": {
+                        "type": "invalid_request_body",
+                        "message": str(exc),
+                    }
+                },
+                started,
+            )
 
         headers = {}
         for name, value in self.headers.items():
@@ -338,6 +615,19 @@ class Handler(BaseHTTPRequestHandler):
 
         self._log(response.status, sent, started)
 
+    def _path_error(self, started):
+        return self._json(
+            403,
+            {
+                "error": {
+                    "type": "path_not_allowed",
+                    "message": "Invalid path. Use one of: %s."
+                    % ", ".join(ALLOWED_PREFIXES),
+                }
+            },
+            started,
+        )
+
     def _relay_error(self, exc, started):
         try:
             payload = exc.read()
@@ -398,8 +688,22 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
+    def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
+        if ":" in server_address[0]:
+            self.address_family = socket.AF_INET6
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+
 
 def main():
+    try:
+        config = _load_config()
+    except ConfigError as exc:
+        sys.stderr.write("opensolomark: config error: %s\n" % exc)
+        sys.stderr.flush()
+        return 2
+
+    _apply_config(config)
+
     try:
         server = Server((HOST, PORT), Handler)
     except OSError as exc:
@@ -410,8 +714,8 @@ def main():
         return 1
 
     sys.stderr.write(
-        "opensolomark: http://%s:%d -> %s (session=%s, mode=%s)\n"
-        % (HOST, PORT, UPSTREAM, SESSION, SESSION_MODE)
+        "opensolomark %s: http://%s:%d -> %s (session=%s, mode=%s)\n"
+        % (__version__, HOST, PORT, UPSTREAM, SESSION, SESSION_MODE)
     )
     sys.stderr.flush()
 

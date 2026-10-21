@@ -9,7 +9,7 @@
     <array>
         <string>/bin/sh</string>
         <string>-c</string>
-        <string>mkdir -p "$HOME/Library/Logs"; exec /usr/bin/env python3 "$HOME/OpenSoloMark/proxy.py" >> "$HOME/Library/Logs/opensolomark.log" 2>&amp;1</string>
+        <string>mkdir -p "$HOME/Library/Logs"; exec /usr/bin/env python3 "$HOME/OpenSoloMark/ocloxy.py" >> "$HOME/Library/Logs/opensolomark.log" 2>&amp;1</string>
     </array>
 
     <key>EnvironmentVariables</key>
@@ -24,6 +24,8 @@
         <string>https://opencode.ai</string>
         <key>SESSION_ID</key>
         <string>opensolomark-local</string>
+        <key>SESSION_MODE</key>
+        <string>fixed</string>
         <key>ALLOWED_PREFIXES</key>
         <string>/inference/,/zen/</string>
         <key>UPSTREAM_TIMEOUT</key>

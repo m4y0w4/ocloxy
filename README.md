@@ -45,10 +45,10 @@ No `pip install` is needed. Check Python with `python3 --version`; if it is miss
 The LaunchAgent expects:
 
 ```text
-~/OpenSoloMark/proxy.py
+~/OpenSoloMark/ocloxy.py
 ```
 
-If you downloaded a ZIP, rename the folder to `OpenSoloMark` and move it to your home folder. If you keep it elsewhere, edit the `proxy.py` path in the plist.
+If you downloaded a ZIP, rename the folder to `OpenSoloMark` and move it to your home folder. If you keep it elsewhere, edit the `ocloxy.py` path in the plist.
 
 ### 2. Install the LaunchAgent
 
@@ -70,7 +70,7 @@ curl -s http://127.0.0.1:47123/healthz
 A healthy proxy returns:
 
 ```json
-{"ok": true, "service": "opensolomark", "upstream": "https://opencode.ai", "session": "opensolomark-local", "port": 47123}
+{"ok": true, "service": "opensolomark", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "opensolomark-local", "port": 47123}
 ```
 
 ### 4. Connect your app
@@ -111,13 +111,13 @@ Full troubleshooting: [docs/troubleshooting.md](docs/troubleshooting.md).
 ## How it works
 
 - The app sends an OpenAI-compatible request to `http://127.0.0.1:47123/inference/go/v1/...`.
-- The proxy adds `x-opencode-session: opensolomark-local` if the app did not send one.
+- By default, the proxy adds `x-opencode-session: opensolomark-local` if the app did not send one.
 - It forwards the method, path, query, body, and end-to-end headers to `https://opencode.ai`.
 - It streams the upstream response back without buffering the whole thing.
-- Only `/inference/` and `/zen/` are allowed; other paths return `403 path_not_allowed`.
+- Only `/inference/` and `/zen/` are allowed; other paths and traversal attempts return `403 path_not_allowed`.
 - `GET /healthz` is a local health check and does not call OpenCode.
 
-The proxy binds to loopback only. It is not reachable from other machines on your network.
+The proxy binds to loopback only. It refuses non-loopback bind addresses and requires HTTPS for non-loopback upstreams.
 
 Read more: [docs/how-it-works.md](docs/how-it-works.md).
 
@@ -129,7 +129,7 @@ The defaults work for most setups. The installed plist is:
 ~/Library/LaunchAgents/com.opensolomark.proxy.plist
 ```
 
-Common changes are the port (`LISTEN_PORT`) and session ID (`SESSION_ID`). After editing, reload the service:
+Common changes are the port (`LISTEN_PORT`), session ID (`SESSION_ID`), and session mode (`SESSION_MODE`). After editing, reload the service:
 
 ```bash
 launchctl bootout gui/$(id -u)/com.opensolomark.proxy
@@ -138,12 +138,12 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.p
 
 All settings, changing ports, moving the folder, and manual runs: [docs/configuration.md](docs/configuration.md).
 
-For per-conversation session IDs, the repo includes a preview entry point, `ocloxy.py` (`1.0.0-preview.1`). It is opt-in and not installed by default. See [Derived Session Mode](docs/derived-session-mode.feature.md).
+Derived Session Mode is opt-in via `SESSION_MODE=derive`. See [Derived Session Mode](docs/derived-session-mode.feature.md).
 
 ## Security
 
-- The proxy binds to `127.0.0.1` only. It is not accessible from other machines.
-- No API key is stored in `proxy.py` or the plist. The app sends the `Authorization` header; the proxy forwards it.
+- The proxy binds to loopback only. It is not accessible from other machines.
+- No API key is stored in `ocloxy.py` or the plist. The app sends the `Authorization` header; the proxy forwards it.
 - The log contains the method, path, status, response size, and timing. It does not contain headers, API keys, prompts, or response bodies.
 - The proxy has no authentication. Any local process that knows the port can use it. Run it only on a Mac you trust.
 

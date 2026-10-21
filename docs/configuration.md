@@ -10,11 +10,14 @@ Open it with TextEdit or any text editor. The settings are under `EnvironmentVar
 
 | Variable | Default | Notes |
 |---|---|---|
-| `LISTEN_HOST` | `127.0.0.1` | Keep this as loopback. Do not expose the proxy to your network. |
+| `LISTEN_HOST` | `127.0.0.1` | Loopback only. Non-loopback values fail at startup. |
 | `LISTEN_PORT` | `47123` | If you change it, update the app base URL too. |
-| `UPSTREAM_BASE` | `https://opencode.ai` | Host only. Do not add a path. |
-| `SESSION_ID` | `opensolomark-local` | Stable identifier sent to OpenCode when the app does not send its own. |
-| `ALLOWED_PREFIXES` | `/inference/,/zen/` | Comma-separated path prefixes with trailing slashes. Use `/inference/` to restrict the proxy to Go only. |
+| `UPSTREAM_BASE` | `https://opencode.ai` | HTTPS is required unless the host is loopback. Host only; do not add a path. |
+| `SESSION_ID` | `opensolomark-local` | Fixed session ID and fallback when derivation is unavailable. |
+| `SESSION_MODE` | `fixed` | `fixed` uses `SESSION_ID`; `derive` hashes the conversation opening. |
+| `SESSION_DERIVE_INCLUDE_SYSTEM` | `1` | Set to `0` to hash only the first user message. |
+| `MAX_BODY_BYTES` | `16777216` | Request body cap, in bytes. The default is 16 MiB. |
+| `ALLOWED_PREFIXES` | `/inference/,/zen/` | Comma-separated path prefixes. The root `/` is not allowed. |
 | `UPSTREAM_TIMEOUT` | `600` | Seconds to wait for OpenCode. |
 | `PATH` | Homebrew and system paths | Where launchd looks for `python3`. |
 
@@ -45,10 +48,10 @@ If you changed `LISTEN_PORT`, use the new port in the health check and in the ap
 The plist starts the proxy with this path:
 
 ```text
-$HOME/OpenSoloMark/proxy.py
+$HOME/OpenSoloMark/ocloxy.py
 ```
 
-If you move the folder, update the `proxy.py` path in `ProgramArguments`, then reload the service. `$HOME` expands to your home directory, so the plist does not contain your username.
+If you move the folder, update the `ocloxy.py` path in `ProgramArguments`, then reload the service. `$HOME` expands to your home directory, so the plist does not contain your username.
 
 ## Restrict the proxy to Go only
 
@@ -58,14 +61,18 @@ Set:
 ALLOWED_PREFIXES=/inference/
 ```
 
-The default also allows `/zen/` as an alternate path family. Other paths return `403 path_not_allowed`.
+The default also allows `/zen/` as an alternate path family. Other paths and traversal attempts return `403 path_not_allowed`.
+
+## Request limits
+
+`MAX_BODY_BYTES` caps both fixed-length and chunked request bodies. Requests over the limit return `413 request_body_too_large`. Malformed framing returns `400 invalid_request_body`.
 
 ## Manual run
 
 To run the proxy in the foreground for testing:
 
 ```bash
-LISTEN_PORT=47124 python3 ~/OpenSoloMark/proxy.py
+LISTEN_PORT=47124 python3 ~/OpenSoloMark/ocloxy.py
 ```
 
 Stop it with `Ctrl` + `C`. The LaunchAgent is the normal way to run the proxy.
@@ -107,17 +114,10 @@ Then reload the service.
 curl -s http://127.0.0.1:47123/healthz
 ```
 
-The response includes the upstream, session ID, and port the proxy is using.
+The response includes the version, session mode, upstream, fallback session ID, and port.
 
-## Preview: `ocloxy.py`
+## Derived Session Mode
 
-`ocloxy.py` adds opt-in Derived Session Mode. It uses the same environment variables as `proxy.py`, plus:
-
-| Variable | Default | Notes |
-|---|---|---|
-| `SESSION_MODE` | `fixed` | `fixed` uses `SESSION_ID`; `derive` hashes the conversation opening. |
-| `SESSION_DERIVE_INCLUDE_SYSTEM` | `1` | Set to `0` to hash only the first user message. |
+Set `SESSION_MODE=derive` to derive a stable per-conversation ID from the opening system and user messages. `SESSION_DERIVE_INCLUDE_SYSTEM=0` limits the hash to the first user message.
 
 `SESSION_ID` remains the fallback. See [Derived Session Mode](derived-session-mode.feature.md) for the algorithm, risks, and testing steps.
-
-`proxy.py` ignores these variables; they only apply to `ocloxy.py`.

@@ -13,7 +13,7 @@ For setup, see the [README](../README.md).
    A healthy proxy returns:
 
    ```json
-   {"ok": true, "service": "opensolomark", "upstream": "https://opencode.ai", "session": "opensolomark-local", "port": 47123}
+   {"ok": true, "service": "opensolomark", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "opensolomark-local", "port": 47123}
    ```
 
 2. Check the LaunchAgent:
@@ -38,7 +38,10 @@ The log records the method, path, status, response size, and timing. It does not
 | `401 Unauthorized` | API key missing or wrong | Re-enter your OpenCode API key in the app. |
 | `404 Not Found` | Base URL is wrong | Use exactly `http://127.0.0.1:47123/inference/go/v1`. Do not append `/chat/completions`. |
 | `400 MissingSessionID` | The app is still calling OpenCode directly | Change the app base URL to the local proxy. |
-| `403 path_not_allowed` | The base URL path is not allowed | Use `/inference/go/v1`. If you changed `ALLOWED_PREFIXES`, check the allowed prefixes. |
+| `403 path_not_allowed` | The base URL path is not allowed | Use `/inference/go/v1`. If you changed `ALLOWED_PREFIXES`, check the allowed prefixes. Traversal paths are also rejected. |
+| `400 invalid_request_body` | Request framing is malformed or ambiguous | Send a valid `Content-Length` or chunked body. Do not send both. |
+| `413 request_body_too_large` | The request body exceeded `MAX_BODY_BYTES` | Reduce the request size or raise `MAX_BODY_BYTES` in the plist and reload. |
+| `config error` in the log | An environment value failed startup validation | Fix `LISTEN_HOST`, `UPSTREAM_BASE`, `SESSION_MODE`, or another reported value, then reload. |
 | `ModelProtocolUnsupported` | The model does not support chat completions | Choose a chat-compatible model. |
 | `FreeTierError` or “free tier can only be used from within OpenCode” | The model is restricted to the OpenCode client | Choose another model. |
 | `Address already in use` | Another process is using port `47123` | Run `lsof -nP -iTCP:47123 -sTCP:LISTEN`. Change `LISTEN_PORT` in the plist, update the app base URL, and reload. |

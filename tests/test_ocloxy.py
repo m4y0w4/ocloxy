@@ -1,5 +1,8 @@
+import io
 import json
+import os
 import unittest
+from unittest.mock import patch
 
 import ocloxy
 
@@ -128,6 +131,175 @@ class DerivedSessionTests(unittest.TestCase):
         self.assertIsNotNone(session)
         self.assertTrue(session.startswith("osm-"))
         self.assertEqual(len(session), 36)
+
+
+class ConfigTests(unittest.TestCase):
+    def load(self, **env):
+        with patch.dict(os.environ, env, clear=True):
+            return ocloxy._load_config()
+
+    def test_defaults_are_valid(self):
+        config = self.load()
+        self.assertEqual(config["upstream"], "https://opencode.ai")
+        self.assertEqual(config["host"], "127.0.0.1")
+        self.assertEqual(config["port"], 47123)
+        self.assertEqual(config["session_mode"], "fixed")
+        self.assertEqual(config["max_body_bytes"], 16 * 1024 * 1024)
+        self.assertEqual(config["allowed_prefixes"], ("/inference/", "/zen/"))
+
+    def test_version_is_early_release(self):
+        self.assertEqual(ocloxy.__version__, "0.1.0")
+
+    def test_non_loopback_host_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(LISTEN_HOST="0.0.0.0")
+
+    def test_remote_plain_http_upstream_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(UPSTREAM_BASE="http://example.com")
+
+    def test_loopback_plain_http_upstream_is_allowed(self):
+        config = self.load(UPSTREAM_BASE="http://127.0.0.1:1234")
+        self.assertEqual(config["upstream"], "http://127.0.0.1:1234")
+
+    def test_upstream_with_credentials_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(UPSTREAM_BASE="https://user:pass@example.com")
+
+    def test_invalid_port_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(LISTEN_PORT="not-a-port")
+
+    def test_invalid_session_mode_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(SESSION_MODE="sometimes")
+
+    def test_invalid_boolean_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(SESSION_DERIVE_INCLUDE_SYSTEM="maybe")
+
+    def test_root_prefix_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(ALLOWED_PREFIXES="/")
+
+    def test_prefix_traversal_is_rejected(self):
+        with self.assertRaises(ocloxy.ConfigError):
+            self.load(ALLOWED_PREFIXES="/inference/../zen/")
+
+
+class PathTests(unittest.TestCase):
+    def test_normal_path_is_kept(self):
+        self.assertEqual(
+            ocloxy._normalize_path("/inference/go/v1/chat/completions"),
+            "/inference/go/v1/chat/completions",
+        )
+
+    def test_redundant_segments_are_normalized(self):
+        self.assertEqual(
+            ocloxy._normalize_path("/inference//go/./v1"),
+            "/inference/go/v1",
+        )
+
+    def test_traversal_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ocloxy._normalize_path("/inference/../zen/chat")
+
+    def test_encoded_traversal_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ocloxy._normalize_path("/inference/%2e%2e/zen/chat")
+
+    def test_null_byte_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ocloxy._normalize_path("/inference/%00")
+
+    def test_backslash_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ocloxy._normalize_path("/inference\\go")
+
+    def test_relative_path_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ocloxy._normalize_path("inference/go")
+
+
+class FakeRequest:
+    _read_chunked_body = ocloxy.Handler._read_chunked_body
+    _read_request_body = ocloxy.Handler._read_request_body
+
+    def __init__(self, headers, body=b""):
+        self.headers = headers
+        self.rfile = io.BytesIO(body)
+
+
+class BodyTests(unittest.TestCase):
+    def setUp(self):
+        self.old_max_body = ocloxy.MAX_BODY_BYTES
+
+    def tearDown(self):
+        ocloxy.MAX_BODY_BYTES = self.old_max_body
+
+    def read(self, headers, body=b""):
+        return FakeRequest(headers, body)._read_request_body()
+
+    def test_content_length_body(self):
+        self.assertEqual(
+            self.read({"Content-Length": "5"}, b"hello"),
+            b"hello",
+        )
+
+    def test_missing_length_is_empty(self):
+        self.assertEqual(self.read({}), b"")
+
+    def test_invalid_length_is_rejected(self):
+        with self.assertRaises(ocloxy.InvalidBody):
+            self.read({"Content-Length": "nope"})
+
+    def test_negative_length_is_rejected(self):
+        with self.assertRaises(ocloxy.InvalidBody):
+            self.read({"Content-Length": "-1"})
+
+    def test_early_end_is_rejected(self):
+        with self.assertRaises(ocloxy.InvalidBody):
+            self.read({"Content-Length": "5"}, b"hi")
+
+    def test_oversized_body_is_rejected(self):
+        ocloxy.MAX_BODY_BYTES = 4
+        with self.assertRaises(ocloxy.BodyTooLarge):
+            self.read({"Content-Length": "5"}, b"hello")
+
+    def test_ambiguous_framing_is_rejected(self):
+        with self.assertRaises(ocloxy.InvalidBody):
+            self.read(
+                {"Content-Length": "5", "Transfer-Encoding": "chunked"},
+                b"hello",
+            )
+
+    def test_unsupported_transfer_encoding_is_rejected(self):
+        with self.assertRaises(ocloxy.InvalidBody):
+            self.read({"Transfer-Encoding": "gzip"})
+
+    def test_chunked_body_is_decoded(self):
+        self.assertEqual(
+            self.read(
+                {"Transfer-Encoding": "chunked"},
+                b"5\r\nhello\r\n0\r\n\r\n",
+            ),
+            b"hello",
+        )
+
+    def test_oversized_chunked_body_is_rejected(self):
+        ocloxy.MAX_BODY_BYTES = 4
+        with self.assertRaises(ocloxy.BodyTooLarge):
+            self.read(
+                {"Transfer-Encoding": "chunked"},
+                b"5\r\nhello\r\n0\r\n\r\n",
+            )
+
+    def test_malformed_chunk_is_rejected(self):
+        with self.assertRaises(ocloxy.InvalidBody):
+            self.read(
+                {"Transfer-Encoding": "chunked"},
+                b"zz\r\nhello\r\n0\r\n\r\n",
+            )
 
 
 if __name__ == "__main__":
