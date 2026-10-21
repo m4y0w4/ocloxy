@@ -10,9 +10,9 @@ This project handles API credentials and local app data. Keep personal and machi
 | `com.ocloxy.proxy.plist` | macOS LaunchAgent that starts the proxy at login and keeps it running. |
 | `README.md` | Quick start and user-facing overview. |
 | `FEATURES.md` | Shipped features and version status. |
-| `docs/troubleshooting.md` | Full troubleshooting reference. |
-| `docs/configuration.md` | Environment variables and advanced configuration. |
-| `docs/how-it-works.md` | Request flow, path allowlist, and security details. |
+| `docs/TROUBLESHOOTING.md` | Full troubleshooting reference. |
+| `docs/CONFIGURATION.md` | Environment variables and advanced configuration. |
+| `docs/HOW-IT-WORKS.md` | Request flow, path allowlist, and security details. |
 | `tests/test_ocloxy.py` | Unit tests for session derivation, config, path, and body handling. |
 | `CONTRIBUTING.md` | This file. |
 | `LICENSE` | MIT license. |

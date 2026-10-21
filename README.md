@@ -45,7 +45,7 @@ It listens on loopback, adds the header if the app did not send one, forwards th
 - An OpenCode API key
 - Markra or SoloMD
 
-No `pip install` is needed. Check Python with `python3 --version`; if it is missing or older than 3.9, see [Troubleshooting](docs/troubleshooting.md#python-is-missing-or-too-old).
+No `pip install` is needed. Check Python with `python3 --version`; if it is missing or older than 3.9, see [Troubleshooting](docs/TROUBLESHOOTING.md#python-is-missing-or-too-old).
 
 ## Quick start
 
@@ -68,7 +68,7 @@ cp ~/ocloxy/com.ocloxy.proxy.plist ~/Library/LaunchAgents/
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
-`plutil -lint` should print `OK`. If the service is already loaded, see [Troubleshooting](docs/troubleshooting.md#the-launchagent-is-already-loaded).
+`plutil -lint` should print `OK`. If the service is already loaded, see [Troubleshooting](docs/TROUBLESHOOTING.md#the-launchagent-is-already-loaded).
 
 ### 3. Check that it is running
 
@@ -115,7 +115,7 @@ tail -n 50 ~/Library/Logs/ocloxy.log
 | `400 MissingSessionID` | The app is still calling OpenCode directly | Change the app base URL to the local proxy. |
 | `ModelProtocolUnsupported` or `FreeTierError` | The model is not chat-compatible or is restricted | Choose a chat-compatible model, and avoid free models restricted to the OpenCode client. |
 
-Full troubleshooting: [docs/troubleshooting.md](docs/troubleshooting.md).
+Full troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## How it works
 
@@ -128,7 +128,7 @@ Full troubleshooting: [docs/troubleshooting.md](docs/troubleshooting.md).
 
 The proxy binds to loopback only. It refuses non-loopback bind addresses and requires HTTPS for non-loopback upstreams.
 
-Read more: [docs/how-it-works.md](docs/how-it-works.md).
+Read more: [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
 
 ## Configuration
 
@@ -145,7 +145,7 @@ launchctl bootout gui/$(id -u)/com.ocloxy.proxy
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
-All settings, changing ports, moving the folder, and manual runs: [docs/configuration.md](docs/configuration.md).
+All settings, changing ports, moving the folder, and manual runs: [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
 Derived Session Mode is opt-in via `SESSION_MODE=derive`.
 
@@ -156,7 +156,7 @@ Derived Session Mode is opt-in via `SESSION_MODE=derive`.
 - The log contains the method, path, status, response size, and timing. It does not contain headers, API keys, prompts, or response bodies.
 - The proxy has no authentication. Any local process that knows the port can use it. Run it only on a Mac you trust.
 
-Security details: [docs/how-it-works.md#security-and-privacy](docs/how-it-works.md#security-and-privacy).
+Security details: [docs/HOW-IT-WORKS.md#security-and-privacy](docs/HOW-IT-WORKS.md#security-and-privacy).
 
 ## Uninstall
 
@@ -186,9 +186,9 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR. The PR template inc
 ## Documentation
 
 - [Features](FEATURES.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Configuration](docs/configuration.md)
-- [How it works](docs/how-it-works.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [How it works](docs/HOW-IT-WORKS.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## License
