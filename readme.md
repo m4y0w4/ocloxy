@@ -181,15 +181,15 @@ rm -f ~/Library/Logs/ocloxy.log
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR. The PR template includes the PII and secret checklist.
+Read [contributing.md](contributing.md) before opening a PR. The PR template includes the PII and secret checklist.
 
 ## Documentation
 
-- [Features](FEATURES.md)
+- [Features](features.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Configuration](docs/configuration.md)
 - [How it works](docs/how-it-works.md)
-- [Contributing](CONTRIBUTING.md)
+- [Contributing](contributing.md)
 
 ## License
 
