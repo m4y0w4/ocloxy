@@ -24,7 +24,9 @@ OpenCode Go session guidance: <https://opencode.ai/docs/go/#where-can-i-use-it>
 
 ## Markra
 
-Markra 2.13.1's provider settings support a JSON custom headers field. According to Markra's documentation, those headers are sent on model-list and chat requests. To use OpenCode Go directly:
+Markra 2.13.1's provider settings support a JSON custom headers field. According to Markra's documentation, those headers are sent on model-list and chat requests. OpenCode asks for a stable session ID per conversation. If you want that instead of Markra's static header, use Ocloxy with `SESSION_MODE=derive` and remove Markra's `x-opencode-session` header; Ocloxy then derives the ID from the conversation opening.
+
+To use OpenCode Go directly:
 
 1. Open **Settings → AI Providers**.
 2. Add or edit an OpenAI-compatible provider.
@@ -39,8 +41,6 @@ Markra 2.13.1's provider settings support a JSON custom headers field. According
    Replace `your-chosen-id` with any stable ASCII token. `ocloxy-local` is only Ocloxy's default, not a required value. Markra's field is static, so one value is used for every conversation.
 
 6. Choose a chat-compatible model, save, click **Test API**, and send a test message.
-
-OpenCode asks for a stable session ID per conversation. If you want that instead of Markra's static header, use Ocloxy with `SESSION_MODE=derive` and remove Markra's `x-opencode-session` header; Ocloxy then derives the ID from the conversation opening.
 
 Markra provider documentation: <https://markra.app/en/docs/settings-providers/>
 
