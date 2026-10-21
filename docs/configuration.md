@@ -3,7 +3,7 @@
 The defaults work for most setups. To change them, edit the installed plist:
 
 ```text
-~/Library/LaunchAgents/com.opensolomark.proxy.plist
+~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 Open it with TextEdit or any text editor. The settings are under `EnvironmentVariables`.
@@ -13,7 +13,7 @@ Open it with TextEdit or any text editor. The settings are under `EnvironmentVar
 | `LISTEN_HOST` | `127.0.0.1` | Loopback only. Non-loopback values fail at startup. |
 | `LISTEN_PORT` | `47123` | If you change it, update the app base URL too. |
 | `UPSTREAM_BASE` | `https://opencode.ai` | HTTPS is required unless the host is loopback. Host only; do not add a path. |
-| `SESSION_ID` | `opensolomark-local` | Fixed session ID and fallback when derivation is unavailable. |
+| `SESSION_ID` | `ocloxy-local` | Fixed session ID and fallback when derivation is unavailable. |
 | `SESSION_MODE` | `fixed` | `fixed` uses `SESSION_ID`; `derive` hashes the conversation opening. |
 | `SESSION_DERIVE_INCLUDE_SYSTEM` | `1` | Set to `0` to hash only the first user message. |
 | `MAX_BODY_BYTES` | `16777216` | Request body cap, in bytes. The default is 16 MiB. |
@@ -24,8 +24,8 @@ Open it with TextEdit or any text editor. The settings are under `EnvironmentVar
 ## Reload after changes
 
 ```bash
-launchctl bootout gui/$(id -u)/com.opensolomark.proxy
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.plist
+launchctl bootout gui/$(id -u)/com.ocloxy.proxy
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 Check it again:
@@ -120,4 +120,4 @@ The response includes the version, session mode, upstream, fallback session ID, 
 
 Set `SESSION_MODE=derive` to derive a stable per-conversation ID from the opening system and user messages. `SESSION_DERIVE_INCLUDE_SYSTEM=0` limits the hash to the first user message.
 
-`SESSION_ID` remains the fallback. See [Derived Session Mode](derived-session-mode.feature.md) for the algorithm, risks, and testing steps.
+`SESSION_ID` remains the fallback.

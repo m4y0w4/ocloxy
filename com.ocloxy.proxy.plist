@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.opensolomark.proxy</string>
+    <string>com.ocloxy.proxy</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>/bin/sh</string>
         <string>-c</string>
-        <string>mkdir -p "$HOME/Library/Logs"; exec /usr/bin/env python3 "$HOME/ocloxy/ocloxy.py" >> "$HOME/Library/Logs/opensolomark.log" 2>&amp;1</string>
+        <string>mkdir -p "$HOME/Library/Logs"; exec /usr/bin/env python3 "$HOME/ocloxy/ocloxy.py" >> "$HOME/Library/Logs/ocloxy.log" 2>&amp;1</string>
     </array>
 
     <key>EnvironmentVariables</key>
@@ -23,7 +23,7 @@
         <key>UPSTREAM_BASE</key>
         <string>https://opencode.ai</string>
         <key>SESSION_ID</key>
-        <string>opensolomark-local</string>
+        <string>ocloxy-local</string>
         <key>SESSION_MODE</key>
         <string>fixed</string>
         <key>ALLOWED_PREFIXES</key>

@@ -129,8 +129,8 @@ class DerivedSessionTests(unittest.TestCase):
             body([{"role": "user", "content": "Hello"}])
         )
         self.assertIsNotNone(session)
-        self.assertTrue(session.startswith("osm-"))
-        self.assertEqual(len(session), 36)
+        self.assertTrue(session.startswith("ocloxy-"))
+        self.assertEqual(len(session), 39)
 
 
 class ConfigTests(unittest.TestCase):
@@ -143,6 +143,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config["upstream"], "https://opencode.ai")
         self.assertEqual(config["host"], "127.0.0.1")
         self.assertEqual(config["port"], 47123)
+        self.assertEqual(config["session"], "ocloxy-local")
         self.assertEqual(config["session_mode"], "fixed")
         self.assertEqual(config["max_body_bytes"], 16 * 1024 * 1024)
         self.assertEqual(config["allowed_prefixes"], ("/inference/", "/zen/"))

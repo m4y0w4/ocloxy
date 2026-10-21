@@ -1,6 +1,6 @@
 # Features
 
-OpenSoloMark is a local proxy that lets Markra or SoloMD use OpenCode Go as an OpenAI-compatible provider.
+Ocloxy is a local proxy that lets Markra or SoloMD use OpenCode Go as an OpenAI-compatible provider.
 
 `ocloxy.py` is the single proxy, version `0.1.0`. It uses Python 3.9+ and the standard library only.
 
@@ -68,5 +68,3 @@ OpenSoloMark is a local proxy that lets Markra or SoloMD use OpenCode Go as an O
 | `ocloxy.py` | Current | `0.1.0` |
 
 `0.1.0` is an early release. Derived Session Mode remains opt-in until real app traffic confirms that the derived IDs stay stable.
-
-See [Derived Session Mode](docs/derived-session-mode.feature.md) for the design, configuration, and testing details.

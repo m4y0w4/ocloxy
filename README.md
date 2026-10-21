@@ -56,9 +56,9 @@ If you downloaded a ZIP, rename the folder to `ocloxy` and move it to your home 
 
 ```bash
 mkdir -p ~/Library/LaunchAgents
-plutil -lint ~/ocloxy/com.opensolomark.proxy.plist
-cp ~/ocloxy/com.opensolomark.proxy.plist ~/Library/LaunchAgents/
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.plist
+plutil -lint ~/ocloxy/com.ocloxy.proxy.plist
+cp ~/ocloxy/com.ocloxy.proxy.plist ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 `plutil -lint` should print `OK`. If the service is already loaded, see [Troubleshooting](docs/troubleshooting.md#the-launchagent-is-already-loaded).
@@ -72,7 +72,7 @@ curl -s http://127.0.0.1:47123/healthz
 A healthy proxy returns:
 
 ```json
-{"ok": true, "service": "opensolomark", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "opensolomark-local", "port": 47123}
+{"ok": true, "service": "ocloxy", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "ocloxy-local", "port": 47123}
 ```
 
 ### 4. Connect your app
@@ -95,14 +95,14 @@ Use `127.0.0.1`, not `localhost`, and do not add a trailing slash. The app shoul
 Send a test message. If it fails, run the health check again and read the log:
 
 ```bash
-tail -n 50 ~/Library/Logs/opensolomark.log
+tail -n 50 ~/Library/Logs/ocloxy.log
 ```
 
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| App cannot connect / connection refused | Proxy is not running, or the app uses the wrong port | Run the health check. Check `launchctl print gui/$(id -u)/com.opensolomark.proxy` and the log. Confirm the app base URL uses port `47123`. |
+| App cannot connect / connection refused | Proxy is not running, or the app uses the wrong port | Run the health check. Check `launchctl print gui/$(id -u)/com.ocloxy.proxy` and the log. Confirm the app base URL uses port `47123`. |
 | `401 Unauthorized` | API key missing or wrong | Re-enter your OpenCode API key in the app. |
 | `404 Not Found` | Base URL is wrong | Use exactly `http://127.0.0.1:47123/inference/go/v1`. Do not append `/chat/completions`. |
 | `400 MissingSessionID` | The app is still calling OpenCode directly | Change the app base URL to the local proxy. |
@@ -113,7 +113,7 @@ Full troubleshooting: [docs/troubleshooting.md](docs/troubleshooting.md).
 ## How it works
 
 - The app sends an OpenAI-compatible request to `http://127.0.0.1:47123/inference/go/v1/...`.
-- By default, the proxy adds `x-opencode-session: opensolomark-local` if the app did not send one.
+- By default, the proxy adds `x-opencode-session: ocloxy-local` if the app did not send one.
 - It forwards the method, path, query, body, and end-to-end headers to `https://opencode.ai`.
 - It streams the upstream response back without buffering the whole thing.
 - Only `/inference/` and `/zen/` are allowed; other paths and traversal attempts return `403 path_not_allowed`.
@@ -128,19 +128,19 @@ Read more: [docs/how-it-works.md](docs/how-it-works.md).
 The defaults work for most setups. The installed plist is:
 
 ```text
-~/Library/LaunchAgents/com.opensolomark.proxy.plist
+~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 Common changes are the port (`LISTEN_PORT`), session ID (`SESSION_ID`), and session mode (`SESSION_MODE`). After editing, reload the service:
 
 ```bash
-launchctl bootout gui/$(id -u)/com.opensolomark.proxy
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.plist
+launchctl bootout gui/$(id -u)/com.ocloxy.proxy
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 All settings, changing ports, moving the folder, and manual runs: [docs/configuration.md](docs/configuration.md).
 
-Derived Session Mode is opt-in via `SESSION_MODE=derive`. See [Derived Session Mode](docs/derived-session-mode.feature.md).
+Derived Session Mode is opt-in via `SESSION_MODE=derive`.
 
 ## Security
 
@@ -154,15 +154,15 @@ Security details: [docs/how-it-works.md#security-and-privacy](docs/how-it-works.
 ## Uninstall
 
 ```bash
-launchctl bootout gui/$(id -u)/com.opensolomark.proxy
-rm ~/Library/LaunchAgents/com.opensolomark.proxy.plist
+launchctl bootout gui/$(id -u)/com.ocloxy.proxy
+rm ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 Then point your app back to its previous provider. Optionally remove the proxy files and log:
 
 ```bash
 rm -rf ~/ocloxy
-rm -f ~/Library/Logs/opensolomark.log
+rm -f ~/Library/Logs/ocloxy.log
 ```
 
 ## Model notes
@@ -182,7 +182,6 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR. The PR template inc
 - [Troubleshooting](docs/troubleshooting.md)
 - [Configuration](docs/configuration.md)
 - [How it works](docs/how-it-works.md)
-- [Derived Session Mode](docs/derived-session-mode.feature.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## License

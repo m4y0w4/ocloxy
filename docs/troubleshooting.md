@@ -13,19 +13,19 @@ For setup, see the [README](../README.md).
    A healthy proxy returns:
 
    ```json
-   {"ok": true, "service": "opensolomark", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "opensolomark-local", "port": 47123}
+   {"ok": true, "service": "ocloxy", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "ocloxy-local", "port": 47123}
    ```
 
 2. Check the LaunchAgent:
 
    ```bash
-   launchctl print gui/$(id -u)/com.opensolomark.proxy
+   launchctl print gui/$(id -u)/com.ocloxy.proxy
    ```
 
 3. Read the log:
 
    ```bash
-   tail -n 50 ~/Library/Logs/opensolomark.log
+   tail -n 50 ~/Library/Logs/ocloxy.log
    ```
 
 The log records the method, path, status, response size, and timing. It does not record headers, API keys, prompts, or response bodies.
@@ -34,7 +34,7 @@ The log records the method, path, status, response size, and timing. It does not
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| App cannot connect / connection refused | Proxy is not running, or the app uses the wrong port | Run the health check. Check `launchctl print gui/$(id -u)/com.opensolomark.proxy` and the log. Confirm the app base URL uses `http://127.0.0.1:47123/inference/go/v1`. |
+| App cannot connect / connection refused | Proxy is not running, or the app uses the wrong port | Run the health check. Check `launchctl print gui/$(id -u)/com.ocloxy.proxy` and the log. Confirm the app base URL uses `http://127.0.0.1:47123/inference/go/v1`. |
 | `401 Unauthorized` | API key missing or wrong | Re-enter your OpenCode API key in the app. |
 | `404 Not Found` | Base URL is wrong | Use exactly `http://127.0.0.1:47123/inference/go/v1`. Do not append `/chat/completions`. |
 | `400 MissingSessionID` | The app is still calling OpenCode directly | Change the app base URL to the local proxy. |
@@ -91,8 +91,8 @@ Then reload the service.
 Unload it, then load it again:
 
 ```bash
-launchctl bootout gui/$(id -u)/com.opensolomark.proxy
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.plist
+launchctl bootout gui/$(id -u)/com.ocloxy.proxy
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 Check it:
@@ -112,9 +112,9 @@ If another process owns the port, change `LISTEN_PORT` in the plist and update t
 ## Start from a clean load
 
 ```bash
-launchctl bootout gui/$(id -u)/com.opensolomark.proxy
-plutil -lint ~/Library/LaunchAgents/com.opensolomark.proxy.plist
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.plist
+launchctl bootout gui/$(id -u)/com.ocloxy.proxy
+plutil -lint ~/Library/LaunchAgents/com.ocloxy.proxy.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 ```
 
 ## Logs
@@ -122,13 +122,13 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.p
 The LaunchAgent writes to:
 
 ```text
-~/Library/Logs/opensolomark.log
+~/Library/Logs/ocloxy.log
 ```
 
 Follow the log while you send a test message:
 
 ```bash
-tail -f ~/Library/Logs/opensolomark.log
+tail -f ~/Library/Logs/ocloxy.log
 ```
 
 A successful request looks like:

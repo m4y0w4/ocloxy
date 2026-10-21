@@ -7,13 +7,12 @@ This project handles API credentials and local app data. Keep personal and machi
 | Path | Purpose |
 |---|---|
 | `ocloxy.py` | The local proxy. Python 3.9+, standard library only. |
-| `com.opensolomark.proxy.plist` | macOS LaunchAgent that starts the proxy at login and keeps it running. |
+| `com.ocloxy.proxy.plist` | macOS LaunchAgent that starts the proxy at login and keeps it running. |
 | `README.md` | Quick start and user-facing overview. |
 | `FEATURES.md` | Shipped features and version status. |
 | `docs/troubleshooting.md` | Full troubleshooting reference. |
 | `docs/configuration.md` | Environment variables and advanced configuration. |
 | `docs/how-it-works.md` | Request flow, path allowlist, and security details. |
-| `docs/derived-session-mode.feature.md` | Derived Session Mode design and rollout notes. |
 | `tests/test_ocloxy.py` | Unit tests for session derivation, config, path, and body handling. |
 | `CONTRIBUTING.md` | This file. |
 | `LICENSE` | MIT license. |
@@ -44,15 +43,18 @@ The repository includes a `.gitignore` for common local artifacts and a PR templ
    - `settings.json`, app settings, or `localstorage.sqlite3`
    - `*.log`, crash reports, `.har`, `.pcap`, or other diagnostics
    - `.env` files, private keys, certificates, or provisioning profiles
+   - `*.feature.md` feature/subfeature design notes, which are private by default
    - Screenshots or pasted logs containing account names, emails, keys, or local paths
 
 4. If you exposed a secret, rotate it and clean the git history. Deleting it in a later commit is not enough. Do not paste the secret into a public issue.
 
 The LaunchAgent plist is intentionally tracked. Do not add a blanket `*.plist` rule to `.gitignore`.
 
+Feature and subfeature design notes (`*.feature.md`) are private. They are ignored by git and must not be committed.
+
 ## Checks
 
-- Run `plutil -lint com.opensolomark.proxy.plist` if the plist changed.
+- Run `plutil -lint com.ocloxy.proxy.plist` if the plist changed.
 - Test `ocloxy.py` with a local upstream if it changed.
 - Run `python3 -m unittest discover -s tests -v` if `ocloxy.py` or its tests changed.
 - Update the README or docs for any user-facing behavior change.

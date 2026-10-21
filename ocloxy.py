@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""OpenSoloMark: a local header bridge for OpenCode Go.
+"""Ocloxy: a local header bridge for OpenCode Go.
 
 OpenCode Go's inference endpoint requires an `x-opencode-session` header.
 Some Markdown/notes apps with built-in AI chat only let you set an
@@ -27,11 +27,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote, urlsplit
 
 __version__ = "0.1.0"
-SERVICE = "opensolomark/" + __version__
+SERVICE = "ocloxy/" + __version__
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 47123
-DEFAULT_SESSION = "opensolomark-local"
+DEFAULT_SESSION = "ocloxy-local"
 DEFAULT_MAX_BODY = 16 * 1024 * 1024
 DEFAULT_PREFIXES = "/inference/,/zen/"
 
@@ -296,10 +296,10 @@ def _derive_session(body):
     ).encode("utf-8")
 
     digest = hashlib.sha256(
-        b"opensolomark-session-v1\0" + material
+        b"ocloxy-session-v1\0" + material
     ).hexdigest()
 
-    return "osm-" + digest[:32]
+    return "ocloxy-" + digest[:32]
 
 
 def _session_for_request(body):
@@ -487,7 +487,7 @@ class Handler(BaseHTTPRequestHandler):
                 200,
                 {
                     "ok": True,
-                    "service": "opensolomark",
+                    "service": "ocloxy",
                     "version": __version__,
                     "session_mode": SESSION_MODE,
                     "upstream": UPSTREAM,
@@ -548,7 +548,7 @@ class Handler(BaseHTTPRequestHandler):
         if "x-opencode-session" not in present:
             headers["x-opencode-session"] = _session_for_request(body)
         if "user-agent" not in present:
-            headers["User-Agent"] = "OpenSoloMark/" + __version__
+            headers["User-Agent"] = "Ocloxy/" + __version__
 
         target = UPSTREAM + path + (("?" + parts.query) if parts.query else "")
         request = urllib.request.Request(
@@ -698,7 +698,7 @@ def main():
     try:
         config = _load_config()
     except ConfigError as exc:
-        sys.stderr.write("opensolomark: config error: %s\n" % exc)
+        sys.stderr.write("ocloxy: config error: %s\n" % exc)
         sys.stderr.flush()
         return 2
 
@@ -708,13 +708,13 @@ def main():
         server = Server((HOST, PORT), Handler)
     except OSError as exc:
         sys.stderr.write(
-            "opensolomark: cannot listen on %s:%d: %s\n" % (HOST, PORT, exc)
+            "ocloxy: cannot listen on %s:%d: %s\n" % (HOST, PORT, exc)
         )
         sys.stderr.flush()
         return 1
 
     sys.stderr.write(
-        "opensolomark %s: http://%s:%d -> %s (session=%s, mode=%s)\n"
+        "ocloxy %s: http://%s:%d -> %s (session=%s, mode=%s)\n"
         % (__version__, HOST, PORT, UPSTREAM, SESSION, SESSION_MODE)
     )
     sys.stderr.flush()

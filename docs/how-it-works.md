@@ -1,6 +1,6 @@
 # How it works
 
-OpenSoloMark is a small HTTP proxy that adds the header OpenCode Go expects and forwards the request unchanged.
+Ocloxy is a small HTTP proxy that adds the header OpenCode Go expects and forwards the request unchanged.
 
 ## Request flow
 
@@ -18,7 +18,7 @@ https://opencode.ai/inference/go/v1/chat/completions
 
 Before forwarding, it:
 
-- adds `x-opencode-session: opensolomark-local` if the app did not send that header;
+- adds `x-opencode-session: ocloxy-local` if the app did not send that header;
 - can derive a per-conversation session ID when `SESSION_MODE=derive`;
 - adds a `User-Agent` if the app did not send one;
 - drops hop-by-hop headers such as `Connection` and `Transfer-Encoding`;
@@ -65,7 +65,7 @@ This keeps the proxy from being used as a general-purpose relay.
 `GET /healthz` is handled locally and does not call OpenCode. It returns:
 
 ```json
-{"ok": true, "service": "opensolomark", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "opensolomark-local", "port": 47123}
+{"ok": true, "service": "ocloxy", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "ocloxy-local", "port": 47123}
 ```
 
 ## Errors
@@ -89,4 +89,4 @@ This keeps the proxy from being used as a general-purpose relay.
 
 ## Derived session IDs
 
-`ocloxy.py` sends the fixed `SESSION_ID` by default. Set `SESSION_MODE=derive` to derive a stable per-conversation ID from the opening system and user messages. It still preserves an app-provided session header and falls back to `SESSION_ID` when it cannot derive one. See [Derived Session Mode](derived-session-mode.feature.md).
+`ocloxy.py` sends the fixed `SESSION_ID` by default. Set `SESSION_MODE=derive` to derive a stable per-conversation ID from the opening system and user messages. It still preserves an app-provided session header and falls back to `SESSION_ID` when it cannot derive one.
