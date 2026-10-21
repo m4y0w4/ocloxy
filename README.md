@@ -1,8 +1,8 @@
 # OcLoXy
 
-**OpenCode Local Proxy**
+** An OpenCode Local Proxy**
 
-A tiny local proxy that lets you use your **OpenCode Go/Zen** API **Markra or SoloMD** as an OpenAI-compatible provider.
+A tiny local proxy that lets you successfully use your **OpenCode Go/Zen** API credentials in **Markra or SoloMD** as an OpenAI-compatible provider.
 
 OpenCode Go requires an `x-opencode-session` header on inference requests. These apps let you set a base URL and an API key, but don't set any custom headers yet. Ocloxy runs on your Mac, adds the header, and forwards the request to OpenCode. Your API key stays in the app.
 
