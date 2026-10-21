@@ -1,6 +1,6 @@
 # How it works
 
-Ocloxy is a small HTTP proxy that adds the header OpenCode Go expects and forwards the request unchanged.
+Ocloxy is a small HTTP proxy that adds the header OpenCode Go expects and forwards the request unchanged. It is only needed when the app cannot send that header itself. **Markra 2.13.1** can send custom provider headers directly; **SoloMD 5.0.4** cannot. See [Compatibility](COMPATIBILITY.md).
 
 ## Request flow
 

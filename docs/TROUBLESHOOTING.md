@@ -1,6 +1,6 @@
 # Troubleshooting
 
-For setup, see the [README](../README.md).
+For setup, see the [README](../README.md). For app-specific header support, see [Compatibility](COMPATIBILITY.md).
 
 ## First checks
 
@@ -37,7 +37,7 @@ The log records the method, path, status, response size, and timing. It does not
 | App cannot connect / connection refused | Proxy is not running, or the app uses the wrong port | Run the health check. Check `launchctl print gui/$(id -u)/com.ocloxy.proxy` and the log. Confirm the app base URL uses `http://127.0.0.1:47123/inference/go/v1`. |
 | `401 Unauthorized` | API key missing or wrong | Re-enter your OpenCode API key in the app. |
 | `404 Not Found` | Base URL is wrong | Use exactly `http://127.0.0.1:47123/inference/go/v1`. Do not append `/chat/completions`. |
-| `400 MissingSessionID` | The app is still calling OpenCode directly | Change the app base URL to the local proxy. |
+| `400 MissingSessionID` | The request reached OpenCode without a usable `x-opencode-session` header | Markra: add the custom header or use Ocloxy. SoloMD: use Ocloxy. See [MissingSessionID](#400-missingsessionid). |
 | `403 path_not_allowed` | The base URL path is not allowed | Use `/inference/go/v1`. If you changed `ALLOWED_PREFIXES`, check the allowed prefixes. Traversal paths are also rejected. |
 | `400 invalid_request_body` | Request framing is malformed or ambiguous | Send a valid `Content-Length` or chunked body. Do not send both. |
 | `413 request_body_too_large` | The request body exceeded `MAX_BODY_BYTES` | Reduce the request size or raise `MAX_BODY_BYTES` in the plist and reload. |
@@ -52,6 +52,26 @@ The log records the method, path, status, response size, and timing. It does not
 | `Broken pipe` or `ConnectionResetError` in the log | The app closed the connection mid-stream | Harmless. |
 | `502 proxy_upstream_unreachable` | The proxy cannot reach `https://opencode.ai` | Check your network, DNS, and any VPN or firewall. |
 | `504 proxy_timeout` | OpenCode did not respond before `UPSTREAM_TIMEOUT` | Try again. If it keeps happening, increase `UPSTREAM_TIMEOUT` in the plist and reload. |
+
+## `400 MissingSessionID`
+
+This error means the request reached OpenCode without a usable `x-opencode-session` header.
+
+- **Markra 2.13.1:** add this custom provider header:
+
+  ```json
+  {"x-opencode-session":"ocloxy-local"}
+  ```
+
+  Or use the Ocloxy base URL instead.
+- **SoloMD 5.0.4:** use Ocloxy. SoloMD's built-in OpenCode Go provider currently returns this error, and SoloMD does not expose a custom-header field. Set the base URL to `http://127.0.0.1:47123/inference/go/v1`.
+- **Ocloxy:** confirm the app base URL is the local proxy URL and that the health check returns `ok: true`:
+
+  ```bash
+  curl -s http://127.0.0.1:47123/healthz
+  ```
+
+See [Compatibility](COMPATIBILITY.md) for the tested paths and versions.
 
 ## Python is missing or too old
 

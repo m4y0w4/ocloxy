@@ -10,6 +10,7 @@ This project handles API credentials and local app data. Keep personal and machi
 | `com.ocloxy.proxy.plist` | macOS LaunchAgent that starts the proxy at login and keeps it running. |
 | `README.md` | Quick start and user-facing overview. |
 | `FEATURES.md` | Shipped features and version status. |
+| `docs/COMPATIBILITY.md` | App versions, direct-header support, and Ocloxy requirements. |
 | `docs/TROUBLESHOOTING.md` | Full troubleshooting reference. |
 | `docs/CONFIGURATION.md` | Environment variables and advanced configuration. |
 | `docs/HOW-IT-WORKS.md` | Request flow, path allowlist, and security details. |
@@ -52,5 +53,6 @@ The repository includes a `.gitignore` for common local artifacts and a PR templ
 - Run `plutil -lint com.ocloxy.proxy.plist` if the plist changed.
 - Test `ocloxy.py` with a local upstream if it changed.
 - Run `python3 -m unittest discover -s tests -v` if `ocloxy.py` or its tests changed.
+- If you change compatibility guidance, verify it against the app version and update the tested date.
 - Update the README or docs for any user-facing behavior change.
 - Open a PR using the repository template.

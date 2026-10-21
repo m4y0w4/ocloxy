@@ -1,6 +1,6 @@
 # Features
 
-Ocloxy is a local proxy that lets Markra or SoloMD use OpenCode Go as an OpenAI-compatible provider.
+Ocloxy is a local compatibility proxy for OpenAI-compatible clients that cannot send the `x-opencode-session` header required by OpenCode Go. It is currently needed for **SoloMD 5.0.4**. **Markra 2.13.1** can send custom provider headers directly and does not need Ocloxy.
 
 `ocloxy.py` is the single proxy, version `0.1.0`. It uses Python 3.9+ and the standard library only.
 
@@ -16,7 +16,9 @@ Ocloxy is a local proxy that lets Markra or SoloMD use OpenCode Go as an OpenAI-
 
 ## Compatibility
 
-- Works with an OpenAI-compatible base URL in Markra or SoloMD.
+- Works with **SoloMD 5.0.4**, which cannot set the required header for its built-in OpenCode Go provider.
+- Works with any OpenAI-compatible client that only exposes a base URL and API key.
+- **Markra 2.13.1** can set custom provider headers directly; Ocloxy is not required there.
 - Uses `http://127.0.0.1:47123/inference/go/v1` as the recommended base URL.
 - Forwards `/models` and `/chat/completions` requests.
 - Allows `/inference/` and `/zen/` path families.
@@ -54,6 +56,7 @@ Ocloxy is a local proxy that lets Markra or SoloMD use OpenCode Go as an OpenAI-
 ## Documentation and guardrails
 
 - README quick start for installing the proxy and connecting an app.
+- Compatibility guide for Markra, SoloMD, and other OpenAI-compatible clients.
 - Troubleshooting guide with common errors and fixes.
 - Configuration guide for ports, paths, timeouts, limits, Python, and certificates.
 - How-it-works guide for request flow, allowlist, streaming, and security.

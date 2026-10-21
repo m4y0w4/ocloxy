@@ -2,18 +2,30 @@
 
 **An OpenCode Local Proxy**
 
-A tiny local proxy that lets you successfully use your **OpenCode Go/Zen** API credentials in **Markra or SoloMD** as an OpenAI-compatible provider.
+A local compatibility proxy for OpenAI-compatible clients that cannot send the `x-opencode-session` header required by **OpenCode Go/Zen**. It runs on your Mac, adds the header, and forwards the request to OpenCode. Your API key stays in the app.
 
-OpenCode Go requires an `x-opencode-session` header on inference requests. These apps let you set a base URL and an API key, but don't set any custom headers yet. Ocloxy runs on your Mac, adds the header, and forwards the request to OpenCode. Your API key stays in the app.
+**Markra 2.13.1** supports custom provider headers, so it can use OpenCode Go directly and does not need Ocloxy. **SoloMD 5.0.4** lists OpenCode Go as a provider, but it currently returns `400 MissingSessionID` and SoloMD does not expose a custom-header field, so SoloMD still needs Ocloxy.
 
 **Recent additions**
 
-- Project renamed to **Ocloxy** (`ocloxy.py`).
+- Verified Markra 2.13.1's direct custom-header path.
+- Verified SoloMD 5.0.4 still needs Ocloxy for OpenCode Go.
+- Added a compatibility guide for Markra, SoloMD, and other clients.
 - Added opt-in **Derived Session Mode** for stable per-conversation session IDs.
 - Hardened request handling and network security.
 - Added `/healthz`, LaunchAgent logging, and expanded the docs.
 
-Tested with Markra 2.13.1 and SoloMD 5.0.3.
+Last verified with Markra 2.13.1 and SoloMD 5.0.4 on 2026-10-21.
+
+## Do you need Ocloxy?
+
+| Client | Direct support | Ocloxy needed? |
+|---|---|---|
+| **Markra 2.13.1** | Custom provider headers | No |
+| **SoloMD 5.0.4** | Built-in OpenCode Go provider, but it returns `400 MissingSessionID`; no custom-header field | Yes |
+| Another OpenAI-compatible client | Varies; a client that can set custom headers can use OpenCode directly | Yes, when it cannot set headers |
+
+See [Compatibility](docs/COMPATIBILITY.md) for setup details and version notes.
 
 ## What it does
 
@@ -26,7 +38,7 @@ Without the header, OpenCode Go returns:
 Ocloxy sits between your app and OpenCode:
 
 ```text
-Markra or SoloMD
+SoloMD or another client without header support
       │
       │  http://127.0.0.1:47123/inference/go/v1
       ▼
@@ -43,11 +55,13 @@ It listens on loopback, adds the header if the app did not send one, forwards th
 - macOS
 - Python 3.9 or newer
 - An OpenCode API key
-- Markra or SoloMD
+- An OpenAI-compatible client that cannot send `x-opencode-session` directly. This is currently the case for **SoloMD 5.0.4**. **Markra 2.13.1** can send custom headers directly and does not need Ocloxy.
 
 No `pip install` is needed. Check Python with `python3 --version`; if it is missing or older than 3.9, see [Troubleshooting](docs/TROUBLESHOOTING.md#python-is-missing-or-too-old).
 
 ## Quick start
+
+If you use **Markra 2.13.1**, skip this installation and use the direct setup in [Markra](#markra).
 
 ### 1. Put the folder in your home directory
 
@@ -84,7 +98,7 @@ A healthy proxy returns:
 
 ### 4. Connect your app
 
-Use these values:
+These values are for the Ocloxy path:
 
 | Setting | Value |
 |---|---|
@@ -96,14 +110,50 @@ Use `127.0.0.1`, not `localhost`, and do not add a trailing slash. The app shoul
 
 | App | Where to configure |
 |---|---|
-| **Markra** | **Settings → AI Providers**. Add or edit a provider, set the API style to **OpenAI-compatible**, enter the values above, save, and select the model. |
-| **SoloMD** | **Settings → AI**. Enable AI, choose **OpenAI-compatible** or **Custom**, enter the values above, and save. |
+| **Markra** | **Settings → AI Providers**. If you are using Ocloxy, add or edit a provider, set the API style to **OpenAI-compatible**, enter the values above, save, and select the model. Markra 2.13.1 can also use OpenCode directly; see [Markra](#markra). |
+| **SoloMD** | **Settings → AI**. Enable AI, choose **OpenAI-compatible** or **Custom**, enter the values above, and save. See [SoloMD](#solomd). |
 
 Send a test message. If it fails, run the health check again and read the log:
 
 ```bash
 tail -n 50 ~/Library/Logs/ocloxy.log
 ```
+
+## Markra
+
+Markra 2.13.1 supports custom provider headers, so it does not need Ocloxy. To use OpenCode Go directly:
+
+1. Open **Settings → AI Providers**.
+2. Add or edit an OpenAI-compatible provider.
+3. Set the base URL to `https://opencode.ai/inference/go/v1`.
+4. Enter your OpenCode API key.
+5. Set custom headers to:
+
+   ```json
+   {"x-opencode-session":"ocloxy-local"}
+   ```
+
+6. Choose a chat-compatible model, save, click **Test API**, and send a test message.
+
+Markra's custom-header field is a fixed JSON object. If you need derived per-conversation session IDs, use Ocloxy's Derived Session Mode instead.
+
+## SoloMD
+
+SoloMD 5.0.4 lists **OpenCode Go** in its AI provider list, but the built-in provider currently returns `400 MissingSessionID`, and SoloMD does not expose a custom-header field. Use the Ocloxy values in [Connect your app](#4-connect-your-app) until SoloMD sends the header itself.
+
+The proxy health check should return `ok: true` before you test a chat. If it still fails, see [Troubleshooting](#troubleshooting).
+
+## Other OpenAI-compatible clients
+
+If the client supports custom provider headers, set:
+
+```json
+{"x-opencode-session":"ocloxy-local"}
+```
+
+and point it at `https://opencode.ai/inference/go/v1`.
+
+If it only exposes a base URL and API key, use Ocloxy at `http://127.0.0.1:47123/inference/go/v1`.
 
 ## Troubleshooting
 
@@ -112,7 +162,7 @@ tail -n 50 ~/Library/Logs/ocloxy.log
 | App cannot connect / connection refused | Proxy is not running, or the app uses the wrong port | Run the health check. Check `launchctl print gui/$(id -u)/com.ocloxy.proxy` and the log. Confirm the app base URL uses port `47123`. |
 | `401 Unauthorized` | API key missing or wrong | Re-enter your OpenCode API key in the app. |
 | `404 Not Found` | Base URL is wrong | Use exactly `http://127.0.0.1:47123/inference/go/v1`. Do not append `/chat/completions`. |
-| `400 MissingSessionID` | The app is still calling OpenCode directly | Change the app base URL to the local proxy. |
+| `400 MissingSessionID` | The request reached OpenCode without a usable `x-opencode-session` header | Markra: add the custom header or use Ocloxy. SoloMD: use Ocloxy. Confirm the Ocloxy base URL and run the health check. See [Compatibility](docs/COMPATIBILITY.md#400-missingsessionid). |
 | `ModelProtocolUnsupported` or `FreeTierError` | The model is not chat-compatible or is restricted | Choose a chat-compatible model, and avoid free models restricted to the OpenCode client. |
 
 Full troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
@@ -186,6 +236,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR. The PR template inc
 ## Documentation
 
 - [Features](FEATURES.md)
+- [Compatibility](docs/COMPATIBILITY.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [How it works](docs/HOW-IT-WORKS.md)
