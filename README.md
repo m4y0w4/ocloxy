@@ -4,7 +4,7 @@
 
 A local compatibility proxy for OpenAI-compatible clients that cannot send the `x-opencode-session` header required by **OpenCode Go/Zen**. It runs on your Mac, adds the header, and forwards the request to OpenCode. Your API key stays in the app.
 
-**Markra 2.13.1** supports custom provider headers, so it can use OpenCode Go directly and does not need Ocloxy. **SoloMD 5.0.4** lists OpenCode Go as a provider, but it currently returns `400 MissingSessionID` and SoloMD does not expose a custom-header field, so SoloMD still needs Ocloxy.
+**Markra 2.13.1** supports custom provider headers, so it can use OpenCode Go directly and does not need Ocloxy unless you want stable per-conversation session IDs, which Ocloxy's Derived Session Mode can provide. **SoloMD 5.0.4** lists OpenCode Go as a provider, but it currently returns `400 MissingSessionID` and SoloMD does not expose a custom-header field, so SoloMD still needs Ocloxy.
 
 **Recent additions**
 
