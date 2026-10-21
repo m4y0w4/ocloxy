@@ -17,7 +17,7 @@ This project handles API credentials and local app data. Keep personal and machi
 | `CONTRIBUTING.md` | This file. |
 | `LICENSE` | MIT license. |
 | `.gitignore` | Keeps local logs, app data, databases, and credentials out of commits. |
-| `.github/pull_request_template.md` | PII and secret checklist for pull requests. |
+| `.github/PR_TEMPLATE.md` | PII and secret checklist for pull requests. |
 
 ## Before you open a PR
 
