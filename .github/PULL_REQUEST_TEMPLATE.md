@@ -18,5 +18,5 @@
 <!-- Describe how you verified the change. For example: -->
 
 - [ ] `plutil -lint com.opensolomark.proxy.plist` passes (if the plist changed).
-- [ ] I tested the proxy with a local upstream (if `proxy.py` changed).
+- [ ] I tested `proxy.py` or `ocloxy.py` with a local upstream (if either changed).
 - [ ] I updated the README or docs for any user-facing behavior change.

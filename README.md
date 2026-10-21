@@ -138,6 +138,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.opensolomark.proxy.p
 
 All settings, changing ports, moving the folder, and manual runs: [docs/configuration.md](docs/configuration.md).
 
+For per-conversation session IDs, the repo includes a preview entry point, `ocloxy.py` (`1.0.0-preview.1`). It is opt-in and not installed by default. See [Derived Session Mode](docs/derived-session-mode.feature.md).
+
 ## Security
 
 - The proxy binds to `127.0.0.1` only. It is not accessible from other machines.
@@ -174,9 +176,11 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR. The PR template inc
 
 ## Documentation
 
+- [Features](FEATURES.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Configuration](docs/configuration.md)
 - [How it works](docs/how-it-works.md)
+- [Derived Session Mode](docs/derived-session-mode.feature.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## License

@@ -6,12 +6,16 @@ This project handles API credentials and local app data. Keep personal and machi
 
 | Path | Purpose |
 |---|---|
-| `proxy.py` | The local proxy. Python 3.9+, standard library only. |
+| `proxy.py` | The current installed local proxy. Python 3.9+, standard library only. |
+| `ocloxy.py` | Preview proxy with opt-in Derived Session Mode. |
 | `com.opensolomark.proxy.plist` | macOS LaunchAgent that starts the proxy at login and keeps it running. |
 | `README.md` | Quick start and user-facing overview. |
+| `FEATURES.md` | Shipped features and preview status. |
 | `docs/troubleshooting.md` | Full troubleshooting reference. |
 | `docs/configuration.md` | Environment variables and advanced configuration. |
 | `docs/how-it-works.md` | Request flow, path allowlist, and security details. |
+| `docs/derived-session-mode.feature.md` | Derived Session Mode design and rollout notes. |
+| `tests/test_ocloxy.py` | Unit tests for session derivation. |
 | `CONTRIBUTING.md` | This file. |
 | `LICENSE` | MIT license. |
 | `.gitignore` | Keeps local logs, app data, databases, and credentials out of commits. |
@@ -51,5 +55,12 @@ The LaunchAgent plist is intentionally tracked. Do not add a blanket `*.plist` r
 
 - Run `plutil -lint com.opensolomark.proxy.plist` if the plist changed.
 - Test the proxy with a local upstream if `proxy.py` changed.
+- Run `python3 -m unittest discover -s tests -v` if `ocloxy.py` or its tests changed.
 - Update the README or docs for any user-facing behavior change.
 - Open a PR using the repository template.
+
+## Versioning
+
+`proxy.py` remains the installed pre-1.0 entry point. `ocloxy.py` is the `1.0.0-preview.1` preview.
+
+A final `1.0.0` should wait until the derived session IDs are stable with real app traffic and the configuration interface is ready to be supported. Record user-facing changes in `FEATURES.md` and the relevant docs.

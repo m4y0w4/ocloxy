@@ -74,3 +74,9 @@ This keeps the proxy from being used as a general-purpose relay.
 - The proxy has no authentication. Any local process that knows the port can use it. Run it only on a Mac you trust.
 - Do not change `LISTEN_HOST` to `0.0.0.0` or expose the port through a tunnel.
 - The proxy does not modify prompts or responses. It adds one header and relays the request.
+
+## Derived session IDs (preview)
+
+`proxy.py` sends the fixed `SESSION_ID` on requests that do not already have `x-opencode-session`.
+
+`ocloxy.py` adds an opt-in mode that derives a stable per-conversation ID from the opening system and user messages. It still preserves an app-provided session header and falls back to `SESSION_ID` when it cannot derive one. See [Derived Session Mode](derived-session-mode.feature.md).

@@ -108,3 +108,16 @@ curl -s http://127.0.0.1:47123/healthz
 ```
 
 The response includes the upstream, session ID, and port the proxy is using.
+
+## Preview: `ocloxy.py`
+
+`ocloxy.py` adds opt-in Derived Session Mode. It uses the same environment variables as `proxy.py`, plus:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `SESSION_MODE` | `fixed` | `fixed` uses `SESSION_ID`; `derive` hashes the conversation opening. |
+| `SESSION_DERIVE_INCLUDE_SYSTEM` | `1` | Set to `0` to hash only the first user message. |
+
+`SESSION_ID` remains the fallback. See [Derived Session Mode](derived-session-mode.feature.md) for the algorithm, risks, and testing steps.
+
+`proxy.py` ignores these variables; they only apply to `ocloxy.py`.
