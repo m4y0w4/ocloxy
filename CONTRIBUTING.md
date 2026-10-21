@@ -43,14 +43,9 @@ The repository includes a `.gitignore` for common local artifacts and a PR templ
    - `settings.json`, app settings, or `localstorage.sqlite3`
    - `*.log`, crash reports, `.har`, `.pcap`, or other diagnostics
    - `.env` files, private keys, certificates, or provisioning profiles
-   - `*.feature.md` feature/subfeature design notes, which are private by default
    - Screenshots or pasted logs containing account names, emails, keys, or local paths
 
 4. If you exposed a secret, rotate it and clean the git history. Deleting it in a later commit is not enough. Do not paste the secret into a public issue.
-
-The LaunchAgent plist is intentionally tracked. Do not add a blanket `*.plist` rule to `.gitignore`.
-
-Feature and subfeature design notes (`*.feature.md`) are private. They are ignored by git and must not be committed.
 
 ## Checks
 
@@ -59,9 +54,3 @@ Feature and subfeature design notes (`*.feature.md`) are private. They are ignor
 - Run `python3 -m unittest discover -s tests -v` if `ocloxy.py` or its tests changed.
 - Update the README or docs for any user-facing behavior change.
 - Open a PR using the repository template.
-
-## Versioning
-
-`ocloxy.py` is the single proxy and is versioned `0.1.0`. Use `v0.1.0` as the tag for this release.
-
-A final `1.0.0` should wait until the derived session IDs are stable with real app traffic and the configuration interface is ready to be supported. Record user-facing changes in `FEATURES.md` and the relevant docs.
