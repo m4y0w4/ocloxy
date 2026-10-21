@@ -8,7 +8,7 @@ OpenCode Go requires an `x-opencode-session` header on inference requests. These
 
 **Recent additions**
 
-- Renamed the project to **Ocloxy** with a single-file `ocloxy.py`.
+- Project renamed to **Ocloxy** (`ocloxy.py`).
 - Added opt-in **Derived Session Mode** for stable per-conversation session IDs.
 - Hardened request handling and network security.
 - Added `/healthz`, LaunchAgent logging, and expanded the docs.
