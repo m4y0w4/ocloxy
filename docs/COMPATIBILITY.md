@@ -10,6 +10,18 @@ Last verified: 2026-10-21.
 | [SoloMD](https://solomd.app/) | 5.0.4 | Built-in OpenCode Go provider returns `400 MissingSessionID`; no custom-header field | Yes |
 | Other OpenAI-compatible clients | Varies | Direct if the client can set custom headers | Yes, when it cannot |
 
+## Session IDs
+
+OpenCode's Go documentation asks clients to send a stable session ID in `x-opencode-session` for each conversation so it can optimize routing and prompt caching. The header is not authentication. The value does not change whether Ocloxy forwards a request; it affects upstream routing and cache behavior.
+
+`ocloxy-local` is only Ocloxy's default value; it is not a required header value. Any stable short ASCII token works, including `your-chosen-id`. Use the same value for every turn in one conversation, and different values for separate conversations, apps, or proxy instances.
+
+A fixed ID is reused for every conversation. It passes the presence check, but it does not give per-conversation routing or cache affinity. For per-conversation IDs, use Ocloxy's `SESSION_MODE=derive` or a client that changes the header per conversation.
+
+Do not generate a new random value for every request. A random value is fine only when it stays fixed for one conversation; per-request randomness defeats routing and prompt-cache affinity. More randomness does not make the proxy work better. A random value per conversation is fine; a random fixed value is no better than any other fixed value except for avoiding accidental collisions.
+
+OpenCode Go session guidance: <https://opencode.ai/docs/go/#where-can-i-use-it>
+
 ## Markra
 
 Markra 2.13.1's provider settings support a JSON custom headers field. According to Markra's documentation, those headers are sent on model-list and chat requests. To use OpenCode Go directly:
@@ -21,12 +33,12 @@ Markra 2.13.1's provider settings support a JSON custom headers field. According
 5. Set custom headers to:
 
    ```json
-   {"x-opencode-session":"ocloxy-local"}
+   {"x-opencode-session":"your-chosen-id"}
    ```
 
-6. Choose a chat-compatible model, save, click **Test API**, and send a test message.
+   Replace `your-chosen-id` with any stable ASCII token. `ocloxy-local` is only Ocloxy's default, not a required value. Markra's field is static, so one value is used for every conversation; use Ocloxy's Derived Session Mode if you need per-conversation IDs.
 
-Markra's custom-header field is a fixed JSON object. If you need derived per-conversation session IDs, use Ocloxy's Derived Session Mode instead.
+6. Choose a chat-compatible model, save, click **Test API**, and send a test message.
 
 Markra provider documentation: <https://markra.app/en/docs/settings-providers/>
 
@@ -49,6 +61,8 @@ SoloMD's AI settings expose a custom base URL but not a custom-header field. Use
 
 Do not use SoloMD's built-in OpenCode Go provider until it sends the header. The proxy health check should return `ok: true` before you test a chat.
 
+SoloMD cannot set the header, so Ocloxy chooses it. To use a custom fixed value, set `SESSION_ID=your-chosen-id` in the plist. For a stable per-conversation value, set `SESSION_MODE=derive`. See [Session IDs](#session-ids) and [Configuration](CONFIGURATION.md#session-ids).
+
 SoloMD AI documentation: <https://solomd.app/docs/ai/>
 
 SoloMD release notes: <https://solomd.app/whats-new/>
@@ -58,10 +72,10 @@ SoloMD release notes: <https://solomd.app/whats-new/>
 If the client supports custom provider headers, set:
 
 ```json
-{"x-opencode-session":"ocloxy-local"}
+{"x-opencode-session":"your-chosen-id"}
 ```
 
-and point it at `https://opencode.ai/inference/go/v1`.
+Replace `your-chosen-id` with any stable value, then point the client at `https://opencode.ai/inference/go/v1`. See [Session IDs](#session-ids).
 
 If it only exposes a base URL and API key, use Ocloxy at `http://127.0.0.1:47123/inference/go/v1`.
 

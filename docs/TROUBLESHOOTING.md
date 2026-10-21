@@ -16,6 +16,8 @@ For setup, see the [README](../README.md). For app-specific header support, see 
    {"ok": true, "service": "ocloxy", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "ocloxy-local", "port": 47123}
    ```
 
+   The `session` value is the configured default, not a required value. See [Session IDs](COMPATIBILITY.md#session-ids).
+
 2. Check the LaunchAgent:
 
    ```bash
@@ -60,11 +62,11 @@ This error means the request reached OpenCode without a usable `x-opencode-sessi
 - **Markra 2.13.1:** add this custom provider header:
 
   ```json
-  {"x-opencode-session":"ocloxy-local"}
+  {"x-opencode-session":"your-chosen-id"}
   ```
 
-  Or use the Ocloxy base URL instead.
-- **SoloMD 5.0.4:** use Ocloxy. SoloMD's built-in OpenCode Go provider currently returns this error, and SoloMD does not expose a custom-header field. Set the base URL to `http://127.0.0.1:47123/inference/go/v1`.
+  Replace `your-chosen-id` with any stable ASCII token. `ocloxy-local` is only Ocloxy's default; it is not required. Markra's field is static, so one value is used for every conversation. If you need per-conversation IDs, use Ocloxy with `SESSION_MODE=derive`. Or use the Ocloxy base URL instead.
+- **SoloMD 5.0.4:** use Ocloxy. SoloMD's built-in OpenCode Go provider currently returns this error, and SoloMD does not expose a custom-header field. Set the base URL to `http://127.0.0.1:47123/inference/go/v1`. Ocloxy chooses the session ID; to customize it, set `SESSION_ID` in the plist or use `SESSION_MODE=derive`. See [Session IDs](COMPATIBILITY.md#session-ids).
 - **Ocloxy:** confirm the app base URL is the local proxy URL and that the health check returns `ok: true`:
 
   ```bash

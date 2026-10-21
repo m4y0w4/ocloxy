@@ -27,7 +27,8 @@ Ocloxy is a local compatibility proxy for OpenAI-compatible clients that cannot 
 
 ## Session handling
 
-- Defaults to a fixed `SESSION_ID`.
+- Defaults to a fixed `SESSION_ID`; `ocloxy-local` is only the default, and any stable ASCII session ID works.
+- Uses one fixed session ID for every conversation by default.
 - Supports opt-in `SESSION_MODE=derive` for a stable per-conversation ID.
 - Derives the ID from the opening messages without storing conversation state.
 - Falls back to `SESSION_ID` when derivation is not possible.

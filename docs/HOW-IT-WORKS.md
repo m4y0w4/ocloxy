@@ -18,7 +18,7 @@ https://opencode.ai/inference/go/v1/chat/completions
 
 Before forwarding, it:
 
-- adds `x-opencode-session: ocloxy-local` if the app did not send that header;
+- adds `x-opencode-session` with the configured session ID (default `ocloxy-local`) if the app did not send that header;
 - can derive a per-conversation session ID when `SESSION_MODE=derive`;
 - adds a `User-Agent` if the app did not send one;
 - drops hop-by-hop headers such as `Connection` and `Transfer-Encoding`;
@@ -68,6 +68,8 @@ This keeps the proxy from being used as a general-purpose relay.
 {"ok": true, "service": "ocloxy", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "ocloxy-local", "port": 47123}
 ```
 
+The `session` value is the configured default, not a required value.
+
 ## Errors
 
 - Upstream HTTP errors are relayed with their status code and response body.
@@ -87,6 +89,12 @@ This keeps the proxy from being used as a general-purpose relay.
 - Do not expose the port through a tunnel. Remote binding is rejected.
 - The proxy does not modify prompts or responses. It adds one header and relays the request.
 
-## Derived session IDs
+## Session IDs
 
-`ocloxy.py` sends the fixed `SESSION_ID` by default. Set `SESSION_MODE=derive` to derive a stable per-conversation ID from the opening system and user messages. It still preserves an app-provided session header and falls back to `SESSION_ID` when it cannot derive one.
+`x-opencode-session` is an opaque routing and prompt-cache hint, not authentication. OpenCode asks for a stable value for each conversation, and different conversations should use different values.
+
+`ocloxy.py` sends the fixed `SESSION_ID` by default. `ocloxy-local` is only the default value; any stable short ASCII token works. A fixed value is reused for every conversation, so it does not give per-conversation routing or cache affinity.
+
+Set `SESSION_MODE=derive` to derive a stable per-conversation ID from the opening system and user messages. The result is deterministic for the same opening, not random per request. It still preserves an app-provided session header and falls back to `SESSION_ID` when it cannot derive one.
+
+A new random value for every request would pass the presence check but prevent OpenCode from keeping routing and prompt-cache affinity. Random is fine only when the value stays fixed for the conversation.

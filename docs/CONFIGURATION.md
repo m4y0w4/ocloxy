@@ -13,8 +13,8 @@ Open it with TextEdit or any text editor. The settings are under `EnvironmentVar
 | `LISTEN_HOST` | `127.0.0.1` | Loopback only. Non-loopback values fail at startup. |
 | `LISTEN_PORT` | `47123` | If you change it, update the app base URL too. |
 | `UPSTREAM_BASE` | `https://opencode.ai` | HTTPS is required unless the host is loopback. Host only; do not add a path. |
-| `SESSION_ID` | `ocloxy-local` | Fixed session ID and fallback when derivation is unavailable. |
-| `SESSION_MODE` | `fixed` | `fixed` uses `SESSION_ID`; `derive` hashes the conversation opening. |
+| `SESSION_ID` | `ocloxy-local` | Fixed session ID and fallback when derivation is unavailable. Any stable ASCII token works; `ocloxy-local` is only the default. |
+| `SESSION_MODE` | `fixed` | `fixed` uses `SESSION_ID` for every conversation; `derive` hashes the conversation opening for per-conversation IDs. |
 | `SESSION_DERIVE_INCLUDE_SYSTEM` | `1` | Set to `0` to hash only the first user message. |
 | `MAX_BODY_BYTES` | `16777216` | Request body cap, in bytes. The default is 16 MiB. |
 | `ALLOWED_PREFIXES` | `/inference/,/zen/` | Comma-separated path prefixes. The root `/` is not allowed. |
@@ -114,10 +114,22 @@ Then reload the service.
 curl -s http://127.0.0.1:47123/healthz
 ```
 
-The response includes the version, session mode, upstream, fallback session ID, and port.
+The response includes the version, session mode, upstream, fallback session ID, and port. The `session` value is the configured default, not a required value.
+
+## Session IDs
+
+`x-opencode-session` is a routing and prompt-cache hint, not authentication. OpenCode asks for a stable value for each conversation.
+
+`SESSION_ID` defaults to `ocloxy-local`. It can be any stable short ASCII token, such as `your-chosen-id`; it does not need to be random or secret. In `fixed` mode, one value is used for every conversation.
+
+If you run more than one proxy instance or app with a fixed ID, give each a distinct value; otherwise they can share one upstream session.
+
+Do not generate a new random value for every request. A random value works only when it stays fixed for the conversation; per-request randomness defeats routing and prompt-cache affinity.
+
+If the app sends its own `x-opencode-session` (for example Markra 2.13.1), Ocloxy preserves it and this setting is only the fallback.
 
 ## Derived Session Mode
 
 Set `SESSION_MODE=derive` to derive a stable per-conversation ID from the opening system and user messages. `SESSION_DERIVE_INCLUDE_SYSTEM=0` limits the hash to the first user message.
 
-`SESSION_ID` remains the fallback.
+The derived value is deterministic for the same opening, not random per request. `SESSION_ID` remains the fallback.

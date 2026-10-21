@@ -96,6 +96,8 @@ A healthy proxy returns:
 {"ok": true, "service": "ocloxy", "version": "0.1.0", "session_mode": "fixed", "upstream": "https://opencode.ai", "session": "ocloxy-local", "port": 47123}
 ```
 
+The `session` value is the configured default. It does not have to be `ocloxy-local`; see [Session IDs](#session-ids).
+
 ### 4. Connect your app
 
 These values are for the Ocloxy path:
@@ -130,16 +132,18 @@ Markra 2.13.1 supports custom provider headers, so it does not need Ocloxy. To u
 5. Set custom headers to:
 
    ```json
-   {"x-opencode-session":"ocloxy-local"}
+   {"x-opencode-session":"your-chosen-id"}
    ```
 
-6. Choose a chat-compatible model, save, click **Test API**, and send a test message.
+   Replace `your-chosen-id` with any stable ASCII token. `ocloxy-local` is only Ocloxy's default, not a required value. Markra's field is static, so one value is used for every conversation; for per-conversation IDs, use Ocloxy's Derived Session Mode.
 
-Markra's custom-header field is a fixed JSON object. If you need derived per-conversation session IDs, use Ocloxy's Derived Session Mode instead.
+6. Choose a chat-compatible model, save, click **Test API**, and send a test message.
 
 ## SoloMD
 
 SoloMD 5.0.4 lists **OpenCode Go** in its AI provider list, but the built-in provider currently returns `400 MissingSessionID`, and SoloMD does not expose a custom-header field. Use the Ocloxy values in [Connect your app](#4-connect-your-app) until SoloMD sends the header itself.
+
+Ocloxy chooses the session ID for SoloMD. To use a custom fixed value, set `SESSION_ID=your-chosen-id` in the plist. For a stable per-conversation value, set `SESSION_MODE=derive`. See [Session IDs](#session-ids).
 
 The proxy health check should return `ok: true` before you test a chat. If it still fails, see [Troubleshooting](#troubleshooting).
 
@@ -148,12 +152,26 @@ The proxy health check should return `ok: true` before you test a chat. If it st
 If the client supports custom provider headers, set:
 
 ```json
-{"x-opencode-session":"ocloxy-local"}
+{"x-opencode-session":"your-chosen-id"}
 ```
 
-and point it at `https://opencode.ai/inference/go/v1`.
+Replace `your-chosen-id` with any stable value, then point the client at `https://opencode.ai/inference/go/v1`. See [Session IDs](#session-ids).
 
 If it only exposes a base URL and API key, use Ocloxy at `http://127.0.0.1:47123/inference/go/v1`.
+
+## Session IDs
+
+`x-opencode-session` is a routing and prompt-cache hint, not authentication. OpenCode asks for a stable value for each conversation. The value does not change whether the proxy forwards a request; it affects upstream routing and cache behavior.
+
+- `ocloxy-local` is only Ocloxy's default. Any stable short ASCII token works, such as `your-chosen-id`.
+- Use the same value for every turn in one conversation, and different values for separate conversations, apps, or proxy instances.
+- A fixed value uses one session for every conversation. It passes the presence check, but it does not give per-conversation routing or cache affinity.
+- A new random value for every request is worse. Random is fine only when the value stays fixed for the conversation.
+- For per-conversation IDs through Ocloxy, set `SESSION_MODE=derive`. For a custom fixed value, set `SESSION_ID` in the plist.
+
+SoloMD users customize the value through Ocloxy because SoloMD does not expose a custom-header field. Markra 2.13.1 users can put any stable value in Markra's custom-header field, but that field uses the same value for every conversation.
+
+OpenCode Go's guidance: <https://opencode.ai/docs/go/#where-can-i-use-it>
 
 ## Troubleshooting
 
@@ -170,7 +188,7 @@ Full troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 ## How it works
 
 - The app sends an OpenAI-compatible request to `http://127.0.0.1:47123/inference/go/v1/...`.
-- By default, the proxy adds `x-opencode-session: ocloxy-local` if the app did not send one.
+- By default, the proxy adds `x-opencode-session` with the configured session ID (default `ocloxy-local`) if the app did not send one.
 - It forwards the method, path, query, body, and end-to-end headers to `https://opencode.ai`.
 - It streams the upstream response back without buffering the whole thing.
 - Only `/inference/` and `/zen/` are allowed; other paths and traversal attempts return `403 path_not_allowed`.
@@ -197,7 +215,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocloxy.proxy.plist
 
 All settings, changing ports, moving the folder, and manual runs: [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
-Derived Session Mode is opt-in via `SESSION_MODE=derive`.
+Derived Session Mode is opt-in via `SESSION_MODE=derive`; for a custom fixed value, change `SESSION_ID`. `ocloxy-local` is only the default. See [Session IDs](#session-ids).
 
 ## Security
 
