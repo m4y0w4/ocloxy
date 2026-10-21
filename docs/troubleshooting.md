@@ -1,6 +1,6 @@
 # Troubleshooting
 
-For setup, see the [README](../readme.md).
+For setup, see the [README](../README.md).
 
 ## First checks
 

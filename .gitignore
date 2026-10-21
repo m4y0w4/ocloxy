@@ -1,5 +1,5 @@
 # Local artifacts only. This file prevents accidental staging; it does not
-# scan file contents. Keep ocloxy.py, readme.md, LICENSE, the LaunchAgent plist,
+# scan file contents. Keep ocloxy.py, README.md, LICENSE, the LaunchAgent plist,
 # and the PR template tracked.
 
 # Private feature/subfeature design notes

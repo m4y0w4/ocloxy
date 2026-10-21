@@ -8,16 +8,16 @@ This project handles API credentials and local app data. Keep personal and machi
 |---|---|
 | `ocloxy.py` | The local proxy. Python 3.9+, standard library only. |
 | `com.ocloxy.proxy.plist` | macOS LaunchAgent that starts the proxy at login and keeps it running. |
-| `readme.md` | Quick start and user-facing overview. |
-| `features.md` | Shipped features and version status. |
+| `README.md` | Quick start and user-facing overview. |
+| `FEATURES.md` | Shipped features and version status. |
 | `docs/troubleshooting.md` | Full troubleshooting reference. |
 | `docs/configuration.md` | Environment variables and advanced configuration. |
 | `docs/how-it-works.md` | Request flow, path allowlist, and security details. |
 | `tests/test_ocloxy.py` | Unit tests for session derivation, config, path, and body handling. |
-| `contributing.md` | This file. |
+| `CONTRIBUTING.md` | This file. |
 | `LICENSE` | MIT license. |
 | `.gitignore` | Keeps local logs, app data, databases, and credentials out of commits. |
-| `.github/pull_request_template.md` | PII and secret checklist for pull requests. |
+| `.github/PULL_REQUEST_TEMPLATE.md` | PII and secret checklist for pull requests. |
 
 ## Before you open a PR
 
