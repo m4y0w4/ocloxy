@@ -55,7 +55,7 @@ It listens on loopback, adds the header if the app did not send one, forwards th
 - macOS
 - Python 3.9 or newer
 - An OpenCode API key
-- An OpenAI-compatible client that cannot send `x-opencode-session` directly. This is currently the case for **SoloMD 5.0.4**. **Markra 2.13.1** can send custom headers directly and does not need Ocloxy.
+- An OpenAI-compatible client that cannot send `x-opencode-session` directly. This is currently the case for **SoloMD 5.0.4**.
 
 No `pip install` is needed. Check Python with `python3 --version`; if it is missing or older than 3.9, see [Troubleshooting](docs/TROUBLESHOOTING.md#python-is-missing-or-too-old).
 
